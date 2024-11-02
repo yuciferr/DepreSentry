@@ -53,6 +53,9 @@ dependencies {
 
     // Hilt
     implementation(libs.dagger.hilt.android)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.firestore.ktx)
     kapt(libs.dagger.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -78,7 +81,7 @@ dependencies {
     implementation(libs.google.gms.fitness)
     implementation(libs.google.gms.auth)
 
-    // Ekran Süresi Takibi
+    // Screen Time Tracking
     implementation(libs.androidx.core.ktx)
 
     // Charts
