@@ -28,12 +28,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.depresentry.presentation.composables.DetailAppBar
 import com.example.depresentry.presentation.composables.GradientBackground
 import com.example.depresentry.presentation.composables.SurveyButton
 
 @Composable
-fun PHQ9Screen() {
+fun PHQ9Screen(navController: NavController) {
     // List of questions
     val questions = listOf(
         "Little interest or pleasure in doing things",
@@ -136,5 +137,5 @@ fun PHQ9Screen() {
 @Preview
 @Composable
 fun PHQ9ScreenPreview() {
-    PHQ9Screen()
+    //PHQ9Screen()
 }

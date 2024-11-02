@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -35,13 +37,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.depresentry.R
 import com.example.depresentry.presentation.composables.DSBasicButton
 import com.example.depresentry.presentation.composables.GradientBackground
+import com.example.depresentry.presentation.navigation.AuthScreen
 
 
 @Composable
-fun OnboardingScreen() {
+fun OnboardingScreen(
+    navController: NavController
+) {
     // State to track the current onboarding step
     var currentStep by remember { mutableIntStateOf(0) }
 
@@ -95,7 +101,7 @@ fun OnboardingScreen() {
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        // Skip button at the top right
+
         if (currentStep < onboardingContent.size - 1) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -104,21 +110,22 @@ fun OnboardingScreen() {
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                ClickableText(
-                    text = androidx.compose.ui.text.AnnotatedString("Skip"),
-                    onClick = {
-                        // TODO: Navigate to SignIn Screen
-                    },
-                    style = androidx.compose.ui.text.TextStyle(
-                        fontFamily = FontFamily.Default,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp,
-                        color = Color(0xF0F9F775),
-                        textAlign = TextAlign.Center
-                    ),
+                Text(
+                    text = "Skip",
+                    color = Color(0xF0F9F775),
+                    fontSize = 16.sp,
+                    fontFamily = FontFamily.Default,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier
+                        .clickable {
+                            navController.navigate(AuthScreen.SignUp.route) {
+                                popUpTo(AuthScreen.Onboarding.route) { inclusive = true }
+                            }
+                        }
                         .shadow(elevation = 4.dp, shape = MaterialTheme.shapes.small)
                 )
+
             }
         }
 
@@ -139,7 +146,9 @@ fun OnboardingScreen() {
                     // Go to the next step
                     currentStep++
                 } else {
-                    // TODO: Handle "Get Started" click
+                    navController.navigate(AuthScreen.SignUp.route) {
+                        popUpTo(AuthScreen.Onboarding.route) { inclusive = true }
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -152,5 +161,5 @@ fun OnboardingScreen() {
 @Preview
 @Composable
 fun OnboardingScreenPreview() {
-    OnboardingScreen()
+    //OnboardingScreen()
 }
