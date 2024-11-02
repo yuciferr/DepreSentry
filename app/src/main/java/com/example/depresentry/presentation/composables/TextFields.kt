@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -21,12 +22,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,17 +44,27 @@ fun DSTextField(
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = androidx.compose.ui.text.input.ImeAction.Done,
+    onImeAction: () -> Unit = {},
     modifier: Modifier = Modifier,
     showKeyboard: Boolean = true,
     onValueChange: (String) -> Unit
 ) {
+    val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+
     TextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label, color = Color(0xFFCBC4CF)) },
         placeholder = { placeholder?.let { Text(it, color = Color(0xFFCBC4CF)) } },
-        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = keyboardType),
+        keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardType = keyboardType,
+            imeAction = imeAction
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { onImeAction() }
+        ),
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         colors = TextFieldDefaults.textFieldColors(
@@ -65,12 +81,14 @@ fun DSTextField(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
+            .focusRequester(focusRequester)
             .clickable {
                 if (!showKeyboard) {
-                    focusManager.clearFocus() // Prevents keyboard from opening
+                    focusManager.clearFocus()
                 }
             }
     )
+
 }
 
 @Composable
@@ -120,4 +138,16 @@ fun DSDropDown(
             }
         }
     }
+}
+
+
+@Preview
+@Composable
+fun DSTextFieldPreview() {
+    var text by remember { mutableStateOf("") }
+    DSTextField(
+        label = "Email",
+        value = text,
+        onValueChange = { text = it }
+    )
 }
