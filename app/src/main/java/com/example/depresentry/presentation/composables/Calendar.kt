@@ -65,7 +65,7 @@ fun Calendar(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.Transparent)
-            .padding(vertical = 8.dp, horizontal = 4.dp)
+            .padding(vertical = 16.dp, horizontal = 4.dp)
     ) {
         // Header row with month and navigation arrows
         Row(

@@ -1,5 +1,6 @@
 package com.example.depresentry.presentation.profile
 
+import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,10 +27,23 @@ class ProfileEditViewModel @Inject constructor(
     var maritalStatus = mutableStateOf("")
     var country = mutableStateOf("")
     var profileImage = mutableStateOf("")
+    var selectedProfileImageUri = mutableStateOf<Uri?>(null)
+
 
     var isLoading = mutableStateOf(false)
     var updateError = mutableStateOf<String?>(null)
     var updateSuccess = mutableStateOf(false)
+
+
+    // Method to update selected profile image
+    fun updateProfileImage(uri: Uri?) {
+        selectedProfileImageUri.value = uri
+
+        // If you want to upload the image or save its path
+        uri?.let {
+            profileImage.value = it.toString()
+        }
+    }
 
     // Load user profile
     fun loadUserProfile() {

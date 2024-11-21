@@ -64,7 +64,8 @@ fun PHQ9Screen(navController: NavController) {
         totalScore += score
         if (currentQuestionIndex == 8) {
             lastQuestionScore = score
-            // /todo navigate to results screen or next screen
+
+            navController.popBackStack()
         } else {
             currentQuestionIndex += 1
         }
@@ -83,7 +84,7 @@ fun PHQ9Screen(navController: NavController) {
             title = "PHQ-9 Depression",
             detail = "${currentQuestionIndex + 1} to 9",
             onBackClick = {
-                // /todo handle back navigation
+                navController.popBackStack()
             }
         )
 

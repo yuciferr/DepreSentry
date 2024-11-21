@@ -4,17 +4,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun OrDivider() {
@@ -74,10 +79,45 @@ fun AgreementCheckbox(
     }
 }
 
+@Composable
+fun ConfirmDialog(text: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val cardBackgroundColor = Color(0xF347404C)
+    val textColor = Color(0xFFE3CCF2)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Yes", color = textColor)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("No", color = textColor)
+            }
+        },
+        text = {
+            Text(
+                text = text,
+                fontSize = 14.sp,
+                color = textColor,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        containerColor = cardBackgroundColor, // Background color of the dialog
+        shape = RoundedCornerShape(10.dp),
+        tonalElevation = 2.dp,
+        properties = DialogProperties()
+    )
+}
+
 
 
 @Preview(showBackground = true)
 @Composable
 fun UtilPreview() {
-
+    ConfirmDialog(
+        text = "Are you sure you want to change Sleep?",
+        {},{}
+    )
 }

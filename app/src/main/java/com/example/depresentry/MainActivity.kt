@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             DepreSentryTheme {
                 GradientBackground()
                 val navController = rememberNavController()
-                RootNavGraph(navController = navController)
+                RootNavGraph(navController = navController, context = this)
             }
         }
     }

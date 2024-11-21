@@ -1,8 +1,9 @@
-package com.example.depresentry.presentation.mood
+package com.example.depresentry.presentation.stats
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -14,22 +15,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.depresentry.R
+import co.yml.charts.common.model.Point
 import com.example.depresentry.presentation.composables.DetailAppBar
 import com.example.depresentry.presentation.composables.GradientBackground
-import com.example.depresentry.presentation.composables.SurveyButton
+import com.example.depresentry.presentation.composables.MoodLineChart
+import com.example.depresentry.presentation.composables.MoodLineChartWithInteractivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun MoodEntryScreen(navController: NavController, onMoodSelected: (Int) -> Unit) {
+fun DetailedStatsScreen(navController: NavController, title: String) {
     // Remember the selected mood (1 to 5) based on button clicks
     val selectedMood = remember { mutableIntStateOf(-1) }
 
@@ -38,56 +39,42 @@ fun MoodEntryScreen(navController: NavController, onMoodSelected: (Int) -> Unit)
 
     // Mood options and their scores
     data class MoodOption(val text: String, val value: Int, val image: Int)
-
-    val moodOptions = listOf(
-        MoodOption("Excellent", 5, R.drawable.emoji_excellent),
-        MoodOption("Good", 4, R.drawable.emoji_good),
-        MoodOption("Average", 3, R.drawable.emoji_average),
-        MoodOption("Bad", 2, R.drawable.emoji_bad),
-        MoodOption("Terrible", 1, R.drawable.emoji_terrible)
-    )
-
     GradientBackground()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         DetailAppBar(
-            title = "Mood",
+            title = title,
             detail = "Today, $currentDateTime",
             onBackClick = {
                 navController.popBackStack()
             }
         )
 
-        Spacer(modifier = Modifier.height(56.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        Text(
-            text = "How was your mood today?",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFE3CCF2),
-            modifier = Modifier.padding(bottom = 24.dp)
+        val points = listOf(
+            Point(0f, 2f), // Monday - Average
+            Point(1f, 4f), // Tuesday - Excellent
+            Point(2f, 1f), // Wednesday - Bad
+            Point(3f, 3f), // Thursday - Good
+            Point(4f, 0f), // Friday - Terrible
+            Point(5f, 2f), // Saturday - Average
+            Point(6f, 3f)  // Sunday - Good
+        )
+
+        MoodLineChartWithInteractivity(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            points = points
         )
 
         Spacer(modifier = Modifier.height(32.dp))
-
-        // Display mood buttons
-        moodOptions.forEach { moodOption ->
-            SurveyButton(
-                text = moodOption.text,
-                painter = painterResource(id = moodOption.image),
-                onClick = {
-                    selectedMood.intValue = moodOption.value
-                    // Navigate to the next screen or perform action
-                    onMoodSelected(moodOption.value)
-                    navController.popBackStack()
-                })
-        }
     }
 }
 

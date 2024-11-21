@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
@@ -51,7 +50,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                 .background(Color.Transparent)
                 .blur(50.dp)
         ){
-            Box(modifier = Modifier.fillMaxWidth().height(80.dp).background(Color(0x250E0B10)))
+            Box(modifier = Modifier.fillMaxWidth().height(80.dp).background(Color(0x350E0B10)))
         }
         NavigationBar(
             containerColor = Color.Transparent,
@@ -83,9 +82,11 @@ fun BottomNavigationBar(navController: NavHostController) {
                     },
                     selected = isSelected,
                     onClick = {
-                        navController.navigate(screen.screen.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
+                        if (!isSelected) {
+                            navController.navigate(screen.screen.route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
                         }
                     }
                 )
