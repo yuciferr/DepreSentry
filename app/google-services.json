@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "780365590382",
+    "project_id": "depresentry",
+    "storage_bucket": "depresentry.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:780365590382:android:babdfda680dd83a2885b7f",
+        "android_client_info": {
+          "package_name": "com.example.depresentry"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "780365590382-3jlqhdbdhdkkimo36ssrvta7j495gucg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0ok_8eoTh9WaYJfsQRT6eVGZUyr76vf8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "780365590382-3jlqhdbdhdkkimo36ssrvta7j495gucg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
