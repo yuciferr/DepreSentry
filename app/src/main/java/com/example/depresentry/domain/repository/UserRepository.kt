@@ -12,4 +12,7 @@ interface UserRepository {
     suspend fun createUserProfile(userProfile: UserProfile): Result<Boolean>
     suspend fun getUserProfile(userId: String): Result<UserProfile?>
     suspend fun updateUserProfile(userProfile: UserProfile): Result<Boolean>
+    suspend fun saveProfileImageLocally(userId: String, imagePath: String): Result<Boolean>
+    suspend fun getLocalProfileImage(userId: String): Result<String?>
+    suspend fun logoutUser(): Result<Boolean>
 }

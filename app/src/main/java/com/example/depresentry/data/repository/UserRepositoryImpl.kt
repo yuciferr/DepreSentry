@@ -6,12 +6,15 @@ import com.example.depresentry.domain.model.UserCredentials
 import com.example.depresentry.domain.model.UserProfile
 import com.example.depresentry.domain.repository.UserRepository
 import com.example.depresentry.data.remote.api.FirebaseAuthService
+import com.example.depresentry.data.local.entity.ProfileImageEntity
+import com.example.depresentry.data.local.dao.ProfileImageDao
 
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
     private val authService: FirebaseAuthService,
     private val databaseService: FireStoreDatabaseService,
+    private val profileImageDao: ProfileImageDao
 ) : UserRepository {
     override fun getCurrentUserId(): String {
         return authService.getUserId()
@@ -45,5 +48,32 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun updateUserProfile(userProfile: UserProfile): Result<Boolean> {
         return databaseService.updateUserProfile(userProfile)
+    }
+
+    override suspend fun saveProfileImageLocally(userId: String, imagePath: String): Result<Boolean> {
+        return try {
+            profileImageDao.insertProfileImage(
+                ProfileImageEntity(
+                    userId = userId,
+                    imagePath = imagePath
+                )
+            )
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getLocalProfileImage(userId: String): Result<String?> {
+        return try {
+            val profileImage = profileImageDao.getProfileImage(userId)
+            Result.success(profileImage?.imagePath)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun logoutUser(): Result<Boolean> {
+        return authService.logoutUser()
     }
 }
