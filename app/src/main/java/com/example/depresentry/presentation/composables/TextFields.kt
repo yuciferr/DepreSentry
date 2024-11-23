@@ -48,6 +48,7 @@ fun DSTextField(
     onImeAction: () -> Unit = {},
     modifier: Modifier = Modifier,
     showKeyboard: Boolean = true,
+    enabled: Boolean = true,
     onValueChange: (String) -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -67,6 +68,7 @@ fun DSTextField(
         ),
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
+        enabled = enabled,
         colors = TextFieldDefaults.textFieldColors(
             containerColor = Color(0xFF1E1622),
             focusedTextColor = Color(0xFFCBC4CF),
@@ -76,13 +78,16 @@ fun DSTextField(
             unfocusedIndicatorColor = Color.Transparent,
             focusedLabelColor = Color(0xFFCBC4CF),
             unfocusedLabelColor = Color(0xFFCBC4CF),
+            disabledTextColor = Color(0xFF8E8E8E),
+            disabledLabelColor = Color(0xFF8E8E8E),
+            disabledIndicatorColor = Color.Transparent
         ),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .focusRequester(focusRequester)
-            .clickable {
+            .clickable(enabled = enabled) {
                 if (!showKeyboard) {
                     focusManager.clearFocus()
                 }
@@ -96,45 +101,49 @@ fun DSDropDown(
     label: String,
     value: String,
     items: List<String>,
+    enabled: Boolean = true,
     onValueChange: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier
         .fillMaxWidth()
-        .clickable { expanded = !expanded }) {
+        .clickable(enabled = enabled) { expanded = !expanded }) {
 
         DSTextField(
             label = label,
             value = value,
             placeholder = "Select $label",
             onValueChange = {},
+            enabled = enabled,
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    modifier = Modifier.clickable { expanded = !expanded }
+                    modifier = Modifier.clickable(enabled = enabled) { expanded = !expanded },
+                    tint = if (enabled) Color(0xFFCBC4CF) else Color(0xFF8E8E8E)
                 )
             },
             showKeyboard = false
         )
 
-        // Adjusted DropdownMenu to open downwards with wider width
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.CenterStart)
-        ) {
-            items.forEach { item ->
-                DropdownMenuItem(
-                    onClick = {
-                        onValueChange(item)
-                        expanded = false
-                    },
-                    text = { Text(text = item) }
-                )
+        if (enabled) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.CenterStart)
+            ) {
+                items.forEach { item ->
+                    DropdownMenuItem(
+                        onClick = {
+                            onValueChange(item)
+                            expanded = false
+                        },
+                        text = { Text(text = item) }
+                    )
+                }
             }
         }
     }
