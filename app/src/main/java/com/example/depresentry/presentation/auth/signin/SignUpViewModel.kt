@@ -36,7 +36,7 @@ class SignUpScreenViewModel @Inject constructor(
             val registerResult = registerUserUseCase(userCredentials)
             registerResult.onSuccess {
                 val currentUserIdResult = getCurrentUserIdUseCase()
-                val userProfile = UserProfile(userId = currentUserIdResult!!, fullName = fullName, gender = null, age = null, profession = null, maritalStatus = null, country = null, profileImage = null)
+                val userProfile = UserProfile(userId = currentUserIdResult!!, fullName = fullName, gender = null, age = null, profession = null, maritalStatus = null, country = null, profileImage = "")
                 createProfile(userProfile)
             }.onFailure { exception ->
                 signUpError.value = exception.message
