@@ -46,4 +46,13 @@ class FirebaseAuthService(
             Result.failure(e)
         }
     }
+
+    fun logoutUser(): Result<Boolean> {
+        return try {
+            auth.signOut()
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
