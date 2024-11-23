@@ -1,11 +1,14 @@
 package com.example.depresentry.presentation.profile
 
 import android.Manifest
+import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +36,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -43,7 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.depresentry.presentation.composables.DSBasicButton
 import com.example.depresentry.presentation.composables.DSDropDown
 import com.example.depresentry.presentation.composables.DSTextField
@@ -67,11 +71,12 @@ fun ProfileEditScreen(navController: NavController) {
     )
 
     // Image selection launcher
+    val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         uri?.let {
-            viewModel.updateProfileImage(it)
+            viewModel.updateProfileImage(it, context)
         }
     }
 
@@ -86,6 +91,7 @@ fun ProfileEditScreen(navController: NavController) {
     val updateError by viewModel.updateError
     val updateSuccess by viewModel.updateSuccess
     val selectedProfileImage by viewModel.selectedProfileImageUri
+    val profileImageUrl by viewModel.profileImage
 
     // Load user profile when the screen is first displayed
     LaunchedEffect(Unit) {
@@ -131,41 +137,107 @@ fun ProfileEditScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .clickable {
-                    // Check and request permission if not granted
                     if (!galleryPermissionState.status.isGranted) {
                         galleryPermissionState.launchPermissionRequest()
                     } else {
-                        // Open gallery to select image
-                        imagePickerLauncher.launch("image/*")
+                        imagePickerLauncher.launch(
+                            PickVisualMediaRequest(
+                                mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
                     }
                 }
                 .padding(vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Show selected image or default icon
-            if (selectedProfileImage != null) {
-                Image(
-                    painter = rememberAsyncImagePainter(selectedProfileImage),
-                    contentDescription = "Selected Profile Picture",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .padding(bottom = 8.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    tint = Color(0xFFD4D4D4),
-                    modifier = Modifier
-                        .size(100.dp)
-                        .padding(bottom = 8.dp)
-                )
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+            ) {
+                val context = LocalContext.current
+                
+                when {
+                    selectedProfileImage != null -> {
+                        Log.d("yuci", "Showing selectedProfileImage: $selectedProfileImage")
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(selectedProfileImage)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Selected Profile Picture",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            onLoading = { Log.d("yuci", "Loading selected image") },
+                            onError = { 
+                                Log.e("yuci", "Error loading selected image")
+                                selectedProfileImage?.let { uri ->
+                                    try {
+                                        context.contentResolver.takePersistableUriPermission(
+                                            uri,
+                                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        )
+                                    } catch (e: Exception) {
+                                        Log.e("yuci", "ContentResolver error: ${e.message}")
+                                    }
+                                }
+                            },
+                            onSuccess = { Log.d("yuci", "Successfully loaded selected image") }
+                        )
+                    }
+                    profileImageUrl.isNotEmpty() -> {
+                        Log.d("yuci", "Showing profileImageUrl: $profileImageUrl")
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(Uri.parse(profileImageUrl))
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Current Profile Picture",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            onLoading = { Log.d("yuci", "Loading profile image") },
+                            onError = { 
+                                Log.e("yuci", "Error loading profile image")
+                                try {
+                                    context.contentResolver.takePersistableUriPermission(
+                                        Uri.parse(profileImageUrl),
+                                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    )
+                                } catch (e: Exception) {
+                                    Log.e("yuci", "ContentResolver error: ${e.message}")
+                                }
+                            },
+                            onSuccess = { Log.d("yuci", "Successfully loaded profile image") }
+                        )
+                    }
+                    else -> {
+                        Log.d("yuci", "Showing default icon")
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = null,
+                            tint = Color(0xFFD4D4D4),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .align(Alignment.Center),
+                        color = Color(0xFFE3CCF2)
+                    )
+                }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text =  if (selectedProfileImage == null) "Add a profile photo" else "Change profile photo",
+                text = when {
+                    selectedProfileImage != null || profileImageUrl.isNotEmpty() -> "Change profile photo"
+                    else -> "Add a profile photo"
+                },
                 style = TextStyle(
                     fontSize = 16.sp,
                     color = Color(0xFFE3CCF2)
@@ -177,9 +249,10 @@ fun ProfileEditScreen(navController: NavController) {
 
         DSTextField(
             label = "Full Name",
-            value = viewModel.fullName.value,
+            value = fullName,
             placeholder = "Enter your full name",
             onValueChange = { viewModel.fullName.value = it },
+            enabled = !isLoading,
             imeAction = ImeAction.Next,
             onImeAction = { fullNameFocusRequester.requestFocus() },
             modifier = Modifier.focusRequester(fullNameFocusRequester)
@@ -198,6 +271,7 @@ fun ProfileEditScreen(navController: NavController) {
             placeholder = "Enter your age",
             keyboardType = KeyboardType.Number,
             onValueChange = { viewModel.age.value = it },
+            enabled = !isLoading,
             imeAction = ImeAction.Next,
             onImeAction = { ageFocusRequester.requestFocus() },
             modifier = Modifier.focusRequester(fullNameFocusRequester)
@@ -208,6 +282,7 @@ fun ProfileEditScreen(navController: NavController) {
             value = profession,
             placeholder = "Enter your profession",
             onValueChange = { viewModel.profession.value = it },
+            enabled = !isLoading,
             imeAction = ImeAction.Next,
             onImeAction = { professionFocusRequester.requestFocus() },
             modifier = Modifier.focusRequester(fullNameFocusRequester)

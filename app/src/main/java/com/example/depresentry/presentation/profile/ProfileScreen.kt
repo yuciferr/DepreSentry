@@ -13,27 +13,44 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.style.TextAlign
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.example.depresentry.R
 import com.example.depresentry.presentation.composables.BottomNavigationBar
 import com.example.depresentry.presentation.composables.ConfirmDialog
 import com.example.depresentry.presentation.composables.DSBasicButton
 import com.example.depresentry.presentation.composables.GradientBackground
 import com.example.depresentry.presentation.composables.SettingsButton
+import com.example.depresentry.presentation.navigation.AuthScreen
 import com.example.depresentry.presentation.navigation.MainScreen
 import com.example.depresentry.presentation.theme.logoFont
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
+fun ProfileScreen(
+    navController: NavHostController,
+    viewModel: ProfileViewModel = hiltViewModel()
+) {
+    val fullName by viewModel.fullName
+    val email by viewModel.email
+    val localProfileImagePath by viewModel.localProfileImagePath
+    val logoutSuccess by viewModel.logoutSuccess
+
     var switchStates = remember { mutableStateMapOf<String, Boolean>() }
     var showDialogFor by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(logoutSuccess) {
+        if (logoutSuccess) {
+            navController.navigate(AuthScreen.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     GradientBackground()
     Scaffold(
@@ -65,26 +82,36 @@ fun ProfileScreen(navController: NavHostController) {
             item {
                 Spacer(modifier = Modifier.height(32.dp))
                 // Profile Image
-                Image(
-                    painter = painterResource(R.drawable.avatar),
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                )
+                if (localProfileImagePath != null) {
+                    AsyncImage(
+                        model = localProfileImagePath,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.avatar),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // User Information
                 Text(
-                    text = "Yusuf Celik",
+                    text = fullName,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFE3CCF2),
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "ysfsmdc@gmail.com",
+                    text = email,
                     fontSize = 14.sp,
                     color = Color(0xFFF9F775)
                 )
@@ -173,7 +200,7 @@ fun ProfileScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .padding(top = 24.dp, bottom = 8.dp)
                         .clickable {
-
+                            viewModel.logout()
                         }
                 )
             }
@@ -191,10 +218,4 @@ fun ProfileScreen(navController: NavHostController) {
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun ProfileScreenPreview() {
-    ProfileScreen(navController = rememberNavController())
 }
