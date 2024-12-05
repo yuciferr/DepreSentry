@@ -4,7 +4,9 @@ import com.example.depresentry.data.local.dao.ProfileImageDao
 import com.example.depresentry.data.remote.api.FirebaseAuthService
 import com.example.depresentry.data.remote.api.FireStoreDatabaseService
 import com.example.depresentry.data.repository.UserRepositoryImpl
+import com.example.depresentry.data.repository.UserDataRepositoryImpl
 import com.example.depresentry.domain.repository.UserRepository
+import com.example.depresentry.domain.repository.UserDataRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,5 +29,13 @@ object RepositoryModule {
             databaseService = databaseService,
             profileImageDao = profileImageDao
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserDataRepository(
+        databaseService: FireStoreDatabaseService
+    ): UserDataRepository {
+        return UserDataRepositoryImpl(databaseService)
     }
 }
