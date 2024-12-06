@@ -17,70 +17,40 @@ fun RootNavGraph(
     navController: NavHostController,
     context: Context
 ) {
-//    var startDestination by remember { mutableStateOf<String?>(null) }
-//
-//    // SharedPreferences'dan ilk giriş kontrolü
-//    val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-//    val isFirstLaunch = prefs.getBoolean("is_first_launch", true)
-//
-//    LaunchedEffect(Unit) {
-//        // Firebase auth durumunu kontrol et
-//        val currentUser = FirebaseAuth.getInstance().currentUser
-//
-//        startDestination = when {
-//            // Kullanıcı zaten giriş yapmışsa
-//            currentUser != null -> {
-//                RootScreen.Main.route
-//            }
-//            // İlk kez giriş yapılıyorsa
-//            isFirstLaunch -> {
-//                // İlk girişi kaydet
-//                prefs.edit().putBoolean("is_first_launch", false).apply()
-//                AuthScreen.Onboarding.route
-//            }
-//            // Daha önce giriş yapılmış ama şu an logout durumundaysa
-//            else -> {
-//                AuthScreen.Login.route
-//            }
-//        }
-//    }
-//
-//    // Firebase Auth state listener
-//    DisposableEffect(Unit) {
-//        val authStateListener = FirebaseAuth.AuthStateListener { auth ->
-//            auth.currentUser?.let {
-//                // Kullanıcı giriş yaptığında Main screen'e yönlendir
-//                navController.navigate(RootScreen.Main.route) {
-//                    popUpTo(navController.graph.startDestinationId) {
-//                        inclusive = true
-//                    }
-//                }
-//            }
-//        }
-//
-//        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
-//
-//        onDispose {
-//            FirebaseAuth.getInstance().removeAuthStateListener(authStateListener)
-//        }
-//    }
-//
-//    startDestination?.let { destination ->
-//        NavHost(
-//            navController = navController,
-//            startDestination = destination
-//        ) {
-//            authGraph(navController)
-//            mainGraph(navController)
-//        }
-//    }
+    var startDestination by remember { mutableStateOf<String?>(null) }
 
-    NavHost(
-        navController = navController,
-        startDestination = RootScreen.Auth.route
-    ) {
-        authGraph(navController)
-        mainGraph(navController)
+    // Tek bir DisposableEffect kullanarak auth durumunu yönetiyoruz
+    DisposableEffect(Unit) {
+        val authStateListener = FirebaseAuth.AuthStateListener { auth ->
+            startDestination = if (auth.currentUser != null) {
+                RootScreen.Main.route
+            } else {
+                RootScreen.Auth.route
+            }
+        }
+
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
+        
+        // İlk kontrol
+        startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
+            RootScreen.Main.route
+        } else {
+            RootScreen.Auth.route
+        }
+
+        onDispose {
+            FirebaseAuth.getInstance().removeAuthStateListener(authStateListener)
+        }
+    }
+
+    startDestination?.let { destination ->
+        NavHost(
+            navController = navController,
+            startDestination = destination
+        ) {
+            authGraph(navController)
+            mainGraph(navController)
+        }
     }
 }
 

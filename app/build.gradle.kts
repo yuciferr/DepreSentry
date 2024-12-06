@@ -19,6 +19,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val properties = org.jetbrains.kotlin.konan.properties.Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+        buildConfigField("String", "GEMINI_API_KEY", "\"${properties.getProperty("apiKey")}\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
+        compose = true
     }
 
     buildTypes {
@@ -36,9 +45,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
-    }
-    buildFeatures {
-        compose = true
     }
 }
 
@@ -75,7 +81,10 @@ dependencies {
     implementation(libs.firebase.analytics.ktx)
 
     // Gemini AI
-    implementation(libs.gemini.ai)
+    implementation(libs.google.generativeai)
+
+    // Gson
+    implementation(libs.google.gson)
 
     // Health Connect
     implementation(libs.androidx.healthconnect.client)
