@@ -13,4 +13,5 @@ interface GeminiRepository {
     suspend fun generateDailyTodos(): Result<List<Task>>
     suspend fun generateNotifications(): Result<List<Notification>>
     fun resetChat()
+    suspend fun setUserProfileMessage(userProfile: UserProfile): Result<Boolean>
 } 

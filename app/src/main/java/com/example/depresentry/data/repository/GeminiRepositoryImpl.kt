@@ -41,4 +41,8 @@ class GeminiRepositoryImpl @Inject constructor(
     override fun resetChat() {
         geminiService.resetChat()
     }
+
+    override suspend fun setUserProfileMessage(userProfile: UserProfile): Result<Boolean> {
+        return processUserProfile(userProfile)
+    }
 } 

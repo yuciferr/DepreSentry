@@ -10,6 +10,7 @@ import com.example.depresentry.domain.usecase.profile.UpdateUserProfileUseCase
 import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.example.depresentry.domain.usecase.profile.SaveLocalProfileImageUseCase
 import com.example.depresentry.domain.usecase.profile.GetLocalProfileImageUseCase
+import com.example.depresentry.domain.usecase.gemini.ProcessUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,7 +24,8 @@ class ProfileEditViewModel @Inject constructor(
     private val updateUserProfileUseCase: UpdateUserProfileUseCase,
     private val getCurrentUserIdUseCase: GetCurrentUserIdUseCase,
     private val saveLocalProfileImageUseCase: SaveLocalProfileImageUseCase,
-    private val getLocalProfileImageUseCase: GetLocalProfileImageUseCase
+    private val getLocalProfileImageUseCase: GetLocalProfileImageUseCase,
+    private val processUserProfileUseCase: ProcessUserProfileUseCase
 ) : ViewModel() {
 
     // State variables to track profile data, loading, error, and success
@@ -150,7 +152,7 @@ class ProfileEditViewModel @Inject constructor(
                 gender = gender.value,
                 maritalStatus = maritalStatus.value,
                 country = country.value,
-                profileImage = "" // Firestore'a boş string gönder
+                profileImage = ""
             )
 
             viewModelScope.launch {
@@ -158,9 +160,17 @@ class ProfileEditViewModel @Inject constructor(
                     isLoading.value = true
                     updateError.value = null
 
+                    // Önce profili güncelle
                     updateUserProfileUseCase(updatedProfile)
                         .onSuccess {
-                            updateSuccess.value = true
+                            // Başarılı olursa Gemini'ye profil mesajını gönder
+                            processUserProfileUseCase(updatedProfile)
+                                .onSuccess {
+                                    updateSuccess.value = true
+                                }
+                                .onFailure { exception ->
+                                    updateError.value = "Failed to process profile with Gemini: ${exception.message}"
+                                }
                         }
                         .onFailure { exception ->
                             updateError.value = "Failed to update profile: ${exception.message}"

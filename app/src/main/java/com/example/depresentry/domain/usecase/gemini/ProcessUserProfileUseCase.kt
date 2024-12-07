@@ -8,6 +8,6 @@ class ProcessUserProfileUseCase @Inject constructor(
     private val repository: GeminiRepository
 ) {
     suspend operator fun invoke(userProfile: UserProfile): Result<Boolean> {
-        return repository.processUserProfile(userProfile)
+        return repository.setUserProfileMessage(userProfile)
     }
 } 

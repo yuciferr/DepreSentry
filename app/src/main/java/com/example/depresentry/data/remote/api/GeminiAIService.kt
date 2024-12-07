@@ -9,6 +9,7 @@ import javax.inject.Inject
 import android.util.Log
 import com.example.depresentry.domain.model.Notification
 import com.example.depresentry.domain.model.Task
+import kotlinx.coroutines.launch
 
 class GeminiAIService @Inject constructor() {
 
@@ -39,9 +40,14 @@ class GeminiAIService @Inject constructor() {
 
 
     private var chat = model.startChat()
+    private var userProfileMessage: String? = null
 
     private suspend fun sendMessage(message: String): Result<String> {
         return try {
+            if (userProfileMessage != null && chat.history.isEmpty()) {
+                chat.sendMessage(userProfileMessage!!)
+            }
+            
             val response = chat.sendMessage(message)
             val responseText = response.text ?: ""
             Log.d("GeminiAI", "İstek: $message")
