@@ -1,6 +1,7 @@
 package com.example.depresentry.presentation.profile
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -27,6 +30,7 @@ import com.example.depresentry.presentation.composables.ConfirmDialog
 import com.example.depresentry.presentation.composables.DSBasicButton
 import com.example.depresentry.presentation.composables.GradientBackground
 import com.example.depresentry.presentation.composables.SettingsButton
+import com.example.depresentry.presentation.composables.ShimmerEffect
 import com.example.depresentry.presentation.navigation.AuthScreen
 import com.example.depresentry.presentation.navigation.MainScreen
 import com.example.depresentry.presentation.theme.logoFont
@@ -40,6 +44,7 @@ fun ProfileScreen(
     val email by viewModel.email
     val localProfileImagePath by viewModel.localProfileImagePath
     val logoutSuccess by viewModel.logoutSuccess
+    val isLoading by viewModel.isLoading
 
     var switchStates = remember { mutableStateMapOf<String, Boolean>() }
     var showDialogFor by remember { mutableStateOf<String?>(null) }
@@ -82,39 +87,83 @@ fun ProfileScreen(
             item {
                 Spacer(modifier = Modifier.height(32.dp))
                 // Profile Image
-                if (localProfileImagePath != null) {
-                    AsyncImage(
-                        model = localProfileImagePath,
-                        contentDescription = "Profile Picture",
+                if (isLoading) {
+                    Box(
                         modifier = Modifier
                             .size(80.dp)
                             .clip(CircleShape)
-                    )
+                    ) {
+                        ShimmerEffect(
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 } else {
-                    Image(
-                        painter = painterResource(R.drawable.avatar),
-                        contentDescription = "Profile Picture",
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                    )
+                    if (localProfileImagePath != null) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        ) {
+                            AsyncImage(
+                                model = localProfileImagePath,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.avatar),
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // User Information
-                Text(
-                    text = fullName,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFE3CCF2),
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = email,
-                    fontSize = 14.sp,
-                    color = Color(0xFFF9F775)
-                )
+                if (isLoading) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        ShimmerEffect(
+                            modifier = Modifier
+                                .width(150.dp)
+                                .height(24.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        ShimmerEffect(
+                            modifier = Modifier
+                                .width(200.dp)
+                                .height(16.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+                    }
+                } else {
+                    Text(
+                        text = fullName,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFE3CCF2),
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = email,
+                        fontSize = 14.sp,
+                        color = Color(0xFFF9F775)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(20.dp))
 

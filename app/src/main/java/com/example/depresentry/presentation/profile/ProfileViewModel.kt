@@ -25,6 +25,8 @@ class ProfileViewModel @Inject constructor(
     var email = mutableStateOf("")
     var localProfileImagePath = mutableStateOf<String?>(null)
     var logoutSuccess = mutableStateOf(false)
+    var isLoading = mutableStateOf(true)
+        private set
 
     init {
         loadUserProfile()
@@ -41,19 +43,24 @@ class ProfileViewModel @Inject constructor(
     private fun loadUserProfile() {
         val userId = getCurrentUserIdUseCase()
         if (userId != null) {
+            isLoading.value = true
             email.value = auth.currentUser?.email ?: ""
             
             viewModelScope.launch {
-                // Firestore'dan profil bilgilerini yükle
-                getUserProfileUseCase(userId).onSuccess { profile ->
-                    profile?.let {
-                        fullName.value = it.fullName ?: ""
+                try {
+                    // Firestore'dan profil bilgilerini yükle
+                    getUserProfileUseCase(userId).onSuccess { profile ->
+                        profile?.let {
+                            fullName.value = it.fullName ?: ""
+                        }
                     }
-                }
 
-                // Room DB'den profil fotoğrafını yükle
-                getLocalProfileImageUseCase(userId).onSuccess { localImagePath ->
-                    localProfileImagePath.value = localImagePath
+                    // Room DB'den profil fotoğrafını yükle
+                    getLocalProfileImageUseCase(userId).onSuccess { localImagePath ->
+                        localProfileImagePath.value = localImagePath
+                    }
+                } finally {
+                    isLoading.value = false
                 }
             }
         }

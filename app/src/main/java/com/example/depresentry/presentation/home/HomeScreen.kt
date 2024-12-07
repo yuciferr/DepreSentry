@@ -1,10 +1,12 @@
 package com.example.depresentry.presentation.home
 
+import android.icu.util.Calendar
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,10 +17,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -33,9 +37,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,12 +49,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.depresentry.R
 import com.example.depresentry.presentation.composables.ActivityCard
 import com.example.depresentry.presentation.composables.BottomNavigationBar
 import com.example.depresentry.presentation.composables.DailyCard
 import com.example.depresentry.presentation.composables.ExpandableFab
 import com.example.depresentry.presentation.composables.GradientBackground
+import com.example.depresentry.presentation.composables.ShimmerEffect
 import com.example.depresentry.presentation.composables.StatsCard
 import com.example.depresentry.presentation.navigation.MainScreen
 import com.example.depresentry.presentation.theme.logoFont
@@ -56,9 +64,12 @@ import com.example.depresentry.presentation.theme.logoFont
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    viewModel: HomeViewModel = hiltViewModel()) {
+    viewModel: HomeViewModel = hiltViewModel()
+) {
     var isFabExpanded by remember { mutableStateOf(false) }
-
+    val fullName by viewModel.fullName
+    val localProfileImagePath by viewModel.localProfileImagePath
+    val isLoading by viewModel.isLoading
 
     GradientBackground()
     Scaffold(
@@ -79,7 +90,7 @@ fun HomeScreen(
         },
         containerColor = Color.Transparent,
 
-        ) { contentPadding ->
+    ) { contentPadding ->
 
         // Glassmorphism-style blurred background layer
         AnimatedVisibility(
@@ -138,60 +149,137 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(
-                            text = "Good Morning,",
-                            style = TextStyle(
-                                fontSize = 30.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White,
-                            ),
-                            modifier = Modifier.align(Alignment.Start)
-                        )
-                        Text(
-                            text = "User Name",
-                            style = TextStyle(
-                                fontSize = 30.sp,
-                                fontWeight = FontWeight.Thin,
-                                color = Color.White,
-                            ),
-                            modifier = Modifier.align(Alignment.Start)
-                        )
+                        if (isLoading) {
+                            ShimmerEffect(
+                                modifier = Modifier
+                                    .width(200.dp)
+                                    .height(36.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ShimmerEffect(
+                                modifier = Modifier
+                                    .width(150.dp)
+                                    .height(36.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                            )
+                        } else {
+                            Text(
+                                text = getGreetingMessage(),
+                                style = TextStyle(
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.White,
+                                ),
+                                modifier = Modifier.align(Alignment.Start)
+                            )
+                            Text(
+                                text = fullName,
+                                style = TextStyle(
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.Thin,
+                                    color = Color.White,
+                                ),
+                                modifier = Modifier.align(Alignment.Start)
+                            )
+                        }
                     }
-                    Icon(
-                        painter = painterResource(R.drawable.avatar),
-                        contentDescription = null,
-                        tint = Color.Unspecified,
+                    
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(CircleShape)
+                        ) {
+                            ShimmerEffect(
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    } else {
+                        if (localProfileImagePath != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                                    .clickable {
+                                        navController.navigate(MainScreen.Profile.route) {
+                                            popUpTo(navController.graph.startDestinationId)
+                                            launchSingleTop = true
+                                        }
+                                    }
+                            ) {
+                                AsyncImage(
+                                    model = localProfileImagePath,
+                                    contentDescription = "Profile Picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                                    .clickable {
+                                        navController.navigate(MainScreen.Profile.route) {
+                                            popUpTo(navController.graph.startDestinationId)
+                                            launchSingleTop = true
+                                        }
+                                    }
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.avatar),
+                                    contentDescription = "Profile Picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                if (isLoading) {
+                    ShimmerEffect(
                         modifier = Modifier
-                            .size(64.dp)
-                            .clickable {
-                                navController.navigate(MainScreen.Profile.route) {
-                                    popUpTo(navController.graph.startDestinationId)
-                                    launchSingleTop = true
-                                }
-                            },
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .padding(horizontal = 16.dp, vertical = 5.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                } else {
+                    DailyCard(
+                        score = 84,
+                        message = "Your mental health score is improving, you're on the right track!",
+                        message2 = "Consider reaching out to a friend for a quick chat or coffee.",
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
                     )
                 }
             }
 
             item {
-                DailyCard(
-                    score = 84,
-                    message = "Your mental health score is improving, you're on the right track!",
-                    message2 = "Consider reaching out to a friend for a quick chat or coffee.",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
-                )
-            }
-
-            item {
-                StatsCard(
-                    title = "Mood",
-                    stats = listOf("Excellent" to 157),
-                    weeklyData = listOf(2, 4, 3, 5, 3, 4, 1),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
-                    color = Color(0xFFCBC4CF)
-                ) {
-                    MainScreen.DetailedStats.title = "Mood"
-                    navController.navigate(MainScreen.DetailedStats.route)
+                if (isLoading) {
+                    ShimmerEffect(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .padding(horizontal = 16.dp, vertical = 5.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                } else {
+                    StatsCard(
+                        title = "Mood",
+                        stats = listOf("Excellent" to 157),
+                        weeklyData = listOf(2, 4, 3, 5, 3, 4, 1),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                        color = Color(0xFFCBC4CF)
+                    ) {
+                        MainScreen.DetailedStats.title = "Mood"
+                        navController.navigate(MainScreen.DetailedStats.route)
+                    }
                 }
             }
 
@@ -202,45 +290,82 @@ fun HomeScreen(
                         .padding(horizontal = 16.dp, vertical = 5.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    ActivityCard(
-                        title = "Steps",
-                        value = 3124,
-                        unit = "Steps",
-                        color = Color(0xFFCB6589),
-                        targetValue = 10000,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        MainScreen.DetailedStats.title = "Steps"
-                        navController.navigate(MainScreen.DetailedStats.route)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    ActivityCard(
-                        title = "Sleep",
-                        value = 6,
-                        unit = "Hours",
-                        color = Color(0xFFE2E06A),
-                        targetValue = 8,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        MainScreen.DetailedStats.title = "Sleep"
-                        navController.navigate(MainScreen.DetailedStats.route)
+                    if (isLoading) {
+                        ShimmerEffect(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(100.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        ShimmerEffect(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(100.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                    } else {
+                        ActivityCard(
+                            title = "Steps",
+                            value = 3124,
+                            unit = "Steps",
+                            color = Color(0xFFCB6589),
+                            targetValue = 10000,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            MainScreen.DetailedStats.title = "Steps"
+                            navController.navigate(MainScreen.DetailedStats.route)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        ActivityCard(
+                            title = "Sleep",
+                            value = 6,
+                            unit = "Hours",
+                            color = Color(0xFFE2E06A),
+                            targetValue = 8,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            MainScreen.DetailedStats.title = "Sleep"
+                            navController.navigate(MainScreen.DetailedStats.route)
+                        }
                     }
                 }
             }
 
             item {
-                StatsCard(
-                    title = "Screen Time",
-                    stats = listOf("WhatsApp" to 157, "Youtube" to 72),
-                    weeklyData = listOf(2, 3, 4, 2, 3, 4, 1),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
-                    color = Color(0xFFC136A8)
-                ) {
-                    MainScreen.DetailedStats.title = "Screen Time"
-                    navController.navigate(MainScreen.DetailedStats.route)
+                if (isLoading) {
+                    ShimmerEffect(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .padding(horizontal = 16.dp, vertical = 5.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                } else {
+                    StatsCard(
+                        title = "Screen Time",
+                        stats = listOf("WhatsApp" to 157, "Youtube" to 72),
+                        weeklyData = listOf(2, 3, 4, 2, 3, 4, 1),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                        color = Color(0xFFC136A8)
+                    ) {
+                        MainScreen.DetailedStats.title = "Screen Time"
+                        navController.navigate(MainScreen.DetailedStats.route)
+                    }
                 }
             }
         }
 
+    }
+}
+
+private fun getGreetingMessage(): String {
+    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    return when (hour) {
+        in 0..5 -> "Good Night,"
+        in 6..11 -> "Good Morning,"
+        in 12..16 -> "Good Afternoon,"
+        in 17..20 -> "Good Evening,"
+        else -> "Good Night,"
     }
 }
