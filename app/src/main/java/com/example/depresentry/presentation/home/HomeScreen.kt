@@ -246,7 +246,7 @@ fun HomeScreen(
                     ShimmerEffect(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(150.dp)
+                            .height(200.dp)
                             .padding(horizontal = 16.dp, vertical = 5.dp)
                             .clip(RoundedCornerShape(16.dp))
                     )
@@ -265,7 +265,7 @@ fun HomeScreen(
                     ShimmerEffect(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
+                            .height(180.dp)
                             .padding(horizontal = 16.dp, vertical = 5.dp)
                             .clip(RoundedCornerShape(16.dp))
                     )
@@ -294,14 +294,14 @@ fun HomeScreen(
                         ShimmerEffect(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(100.dp)
+                                .height(150.dp)
                                 .clip(RoundedCornerShape(16.dp))
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         ShimmerEffect(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(100.dp)
+                                .height(150.dp)
                                 .clip(RoundedCornerShape(16.dp))
                         )
                     } else {
@@ -337,7 +337,7 @@ fun HomeScreen(
                     ShimmerEffect(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
+                            .height(180.dp)
                             .padding(horizontal = 16.dp, vertical = 5.dp)
                             .clip(RoundedCornerShape(16.dp))
                     )
