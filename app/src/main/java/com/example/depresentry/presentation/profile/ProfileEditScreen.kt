@@ -156,7 +156,7 @@ fun ProfileEditScreen(navController: NavController) {
                     .clip(CircleShape)
             ) {
                 val context = LocalContext.current
-                
+
                 when {
                     selectedProfileImage != null -> {
                         Log.d("yuci", "Showing selectedProfileImage: $selectedProfileImage")
@@ -169,7 +169,7 @@ fun ProfileEditScreen(navController: NavController) {
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
                             onLoading = { Log.d("yuci", "Loading selected image") },
-                            onError = { 
+                            onError = {
                                 Log.e("yuci", "Error loading selected image")
                                 selectedProfileImage?.let { uri ->
                                     try {
@@ -185,6 +185,7 @@ fun ProfileEditScreen(navController: NavController) {
                             onSuccess = { Log.d("yuci", "Successfully loaded selected image") }
                         )
                     }
+
                     profileImageUrl.isNotEmpty() -> {
                         Log.d("yuci", "Showing profileImageUrl: $profileImageUrl")
                         AsyncImage(
@@ -196,7 +197,7 @@ fun ProfileEditScreen(navController: NavController) {
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
                             onLoading = { Log.d("yuci", "Loading profile image") },
-                            onError = { 
+                            onError = {
                                 Log.e("yuci", "Error loading profile image")
                                 try {
                                     context.contentResolver.takePersistableUriPermission(
@@ -210,6 +211,7 @@ fun ProfileEditScreen(navController: NavController) {
                             onSuccess = { Log.d("yuci", "Successfully loaded profile image") }
                         )
                     }
+
                     else -> {
                         Log.d("yuci", "Showing default icon")
                         Icon(
@@ -277,21 +279,22 @@ fun ProfileEditScreen(navController: NavController) {
             modifier = Modifier.focusRequester(fullNameFocusRequester)
         )
 
-        DSTextField(
+        DSDropDown (
             label = "Profession",
             value = profession,
-            placeholder = "Enter your profession",
             onValueChange = { viewModel.profession.value = it },
             enabled = !isLoading,
-            imeAction = ImeAction.Next,
-            onImeAction = { professionFocusRequester.requestFocus() },
-            modifier = Modifier.focusRequester(fullNameFocusRequester)
+            items = listOf(
+                "Unemployed",
+                "Heavy work schedule",
+                "Balanced work"
+            )
         )
 
         DSDropDown(
             label = "Marital Status",
             value = maritalStatus,
-            items = listOf("Single", "Married", "Divorced", "Widowed"),
+            items = listOf("Single", "In Relationship", "Married", "Divorced", "Widowed"),
             onValueChange = { viewModel.maritalStatus.value = it }
         )
 
@@ -299,12 +302,18 @@ fun ProfileEditScreen(navController: NavController) {
             label = "Country",
             value = country,
             items = listOf(
-                "USA",
-                "Canada",
-                "UK",
-                "Germany",
-                "France"
-            ), // Add more countries as needed
+                "Western Europe",
+                "North America",
+                "Central and Eastern Europe",
+                "Latin America",
+                "Middle East",
+                "North Africa",
+                "South Asia",
+                "East Asia",
+                "Southeast Asia",
+                "Sub Saharan Africa",
+                "Central Asia"
+            ),
             onValueChange = { viewModel.country.value = it }
         )
 
