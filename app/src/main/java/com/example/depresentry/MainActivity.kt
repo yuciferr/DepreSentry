@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
 import com.example.depresentry.presentation.composables.GradientBackground
@@ -14,6 +12,7 @@ import com.example.depresentry.presentation.theme.DepreSentryTheme
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.depresentry.data.local.dao.AppStateDao
 import kotlinx.coroutines.launch
 import com.example.depresentry.domain.model.DailyData
 import com.example.depresentry.domain.model.Steps
@@ -23,6 +22,7 @@ import com.example.depresentry.domain.usecase.gemini.ProcessDailyDataUseCase
 import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import javax.inject.Inject
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -31,6 +31,9 @@ class MainActivity : ComponentActivity() {
     
     @Inject
     lateinit var getCurrentUserIdUseCase: GetCurrentUserIdUseCase
+
+    @Inject
+    lateinit var appStateDao: AppStateDao
 
     private var keepSplashScreen = true
 
@@ -45,8 +48,13 @@ class MainActivity : ComponentActivity() {
         
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Mock data işlemi
+        // AppState'i initialize et ve bekle
         lifecycleScope.launch {
+            appStateDao.initializeAppState()
+            // AppState'in yüklenmesini bekle
+            appStateDao.getAppState().first()
+            
+            // Mock data işlemi
             delay(1500) // Hilt'in injection'ı tamamlaması için kısa bir gecikme
             
             try {
@@ -82,16 +90,12 @@ class MainActivity : ComponentActivity() {
             DepreSentryTheme {
                 GradientBackground()
                 val navController = rememberNavController()
-                RootNavGraph(navController = navController, context = this)
+                RootNavGraph(
+                    navController = navController, 
+                    context = this,
+                    appStateDao = appStateDao
+                )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun GreetingPreview() {
-    DepreSentryTheme {
-        GradientBackground()
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.depresentry.data.local.DepreSentryDatabase
 import com.example.depresentry.data.local.dao.ChatMessageDao
+import com.example.depresentry.data.local.dao.AppStateDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,7 +25,8 @@ object DatabaseModule {
             context,
             DepreSentryDatabase::class.java,
             "depresentry_db"
-        ).build()
+        ).fallbackToDestructiveMigration()
+         .build()
     }
 
     @Provides
@@ -34,5 +36,11 @@ object DatabaseModule {
     @Provides
     fun provideChatMessageDao(database: DepreSentryDatabase): ChatMessageDao {
         return database.chatMessageDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppStateDao(database: DepreSentryDatabase): AppStateDao {
+        return database.appStateDao()
     }
 } 

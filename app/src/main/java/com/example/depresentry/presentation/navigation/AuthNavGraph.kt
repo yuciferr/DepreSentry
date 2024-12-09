@@ -14,12 +14,18 @@ sealed class AuthScreen(val route: String) {
     object SignUp : AuthScreen("signup")
 }
 
-fun NavGraphBuilder.authGraph(navController: NavHostController) {
-    navigation(startDestination = AuthScreen.Onboarding.route, route = RootScreen.Auth.route) {
+fun NavGraphBuilder.authGraph(
+    navController: NavHostController,
+    isOnboardingCompleted: Boolean
+) {
+    android.util.Log.d("AuthNavGraph", "isOnboardingCompleted: $isOnboardingCompleted")
+    
+    navigation(
+        startDestination = if (!isOnboardingCompleted) AuthScreen.Onboarding.route else AuthScreen.Login.route,
+        route = RootScreen.Auth.route
+    ) {
         composable(AuthScreen.Onboarding.route) { OnboardingScreen(navController) }
-        composable(AuthScreen.Login.route) { LoginScreen(navController)}
-        composable(AuthScreen.SignUp.route) {
-            SignUpScreen(navController)
-        }
+        composable(AuthScreen.Login.route) { LoginScreen(navController) }
+        composable(AuthScreen.SignUp.route) { SignUpScreen(navController) }
     }
 }

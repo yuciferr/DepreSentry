@@ -42,11 +42,13 @@ import com.example.depresentry.R
 import com.example.depresentry.presentation.composables.DSBasicButton
 import com.example.depresentry.presentation.composables.GradientBackground
 import com.example.depresentry.presentation.navigation.AuthScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 
 
 @Composable
 fun OnboardingScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: OnboardingViewModel = hiltViewModel()
 ) {
     // State to track the current onboarding step
     var currentStep by remember { mutableIntStateOf(0) }
@@ -108,7 +110,7 @@ fun OnboardingScreen(
                 horizontalArrangement = Arrangement.End,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 32.dp)
             ) {
                 Text(
                     text = "Skip",
@@ -119,6 +121,7 @@ fun OnboardingScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .clickable {
+                            viewModel.completeOnboarding()
                             navController.navigate(AuthScreen.SignUp.route) {
                                 popUpTo(AuthScreen.Onboarding.route) { inclusive = true }
                             }
@@ -143,9 +146,9 @@ fun OnboardingScreen(
         DSBasicButton(
             onClick = {
                 if (currentStep < onboardingContent.size - 1) {
-                    // Go to the next step
                     currentStep++
                 } else {
+                    viewModel.completeOnboarding()
                     navController.navigate(AuthScreen.SignUp.route) {
                         popUpTo(AuthScreen.Onboarding.route) { inclusive = true }
                     }
