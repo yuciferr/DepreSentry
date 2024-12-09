@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.lifecycle.process)
     kapt(libs.dagger.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
