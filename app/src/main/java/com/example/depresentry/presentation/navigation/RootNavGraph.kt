@@ -10,47 +10,18 @@ import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.runtime.DisposableEffect
 
 @Composable
 fun RootNavGraph(
     navController: NavHostController,
     context: Context
 ) {
-    var startDestination by remember { mutableStateOf<String?>(null) }
-
-    // Tek bir DisposableEffect kullanarak auth durumunu yönetiyoruz
-    DisposableEffect(Unit) {
-        val authStateListener = FirebaseAuth.AuthStateListener { auth ->
-            startDestination = if (auth.currentUser != null) {
-                RootScreen.Main.route
-            } else {
-                RootScreen.Auth.route
-            }
-        }
-
-        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
-        
-        // İlk kontrol
-        startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
-            RootScreen.Main.route
-        } else {
-            RootScreen.Auth.route
-        }
-
-        onDispose {
-            FirebaseAuth.getInstance().removeAuthStateListener(authStateListener)
-        }
-    }
-
-    startDestination?.let { destination ->
-        NavHost(
-            navController = navController,
-            startDestination = destination
-        ) {
-            authGraph(navController)
-            mainGraph(navController)
-        }
+    NavHost(
+        navController = navController,
+        startDestination = RootScreen.Auth.route
+    ) {
+        authGraph(navController)
+        mainGraph(navController)
     }
 }
 

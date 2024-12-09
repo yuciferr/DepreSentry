@@ -1,13 +1,17 @@
 package com.example.depresentry.data.repository
 
+import com.example.depresentry.data.local.dao.ChatMessageDao
 import com.example.depresentry.data.remote.api.GeminiAIService
 import com.example.depresentry.domain.model.*
 import com.example.depresentry.domain.repository.GeminiRepository
+import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.google.gson.Gson
 import javax.inject.Inject
 
 class GeminiRepositoryImpl @Inject constructor(
-    private val geminiService: GeminiAIService
+    private val geminiService: GeminiAIService,
+    private val chatMessageDao: ChatMessageDao,
+    private val getCurrentUserIdUseCase: GetCurrentUserIdUseCase
 ) : GeminiRepository {
     
     private val gson = Gson()

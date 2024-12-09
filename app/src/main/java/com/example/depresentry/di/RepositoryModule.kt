@@ -1,5 +1,6 @@
 package com.example.depresentry.di
 
+import com.example.depresentry.data.local.dao.ChatMessageDao
 import com.example.depresentry.data.local.dao.ProfileImageDao
 import com.example.depresentry.data.remote.api.FirebaseAuthService
 import com.example.depresentry.data.remote.api.FireStoreDatabaseService
@@ -10,6 +11,7 @@ import com.example.depresentry.data.repository.GeminiRepositoryImpl
 import com.example.depresentry.domain.repository.UserRepository
 import com.example.depresentry.domain.repository.UserDataRepository
 import com.example.depresentry.domain.repository.GeminiRepository
+import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,14 +47,26 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideGeminiRepository(
-        geminiService: GeminiAIService
+        geminiAIService: GeminiAIService,
+        chatMessageDao: ChatMessageDao,
+        getCurrentUserIdUseCase: GetCurrentUserIdUseCase
     ): GeminiRepository {
-        return GeminiRepositoryImpl(geminiService)
+        return GeminiRepositoryImpl(
+            geminiService = geminiAIService,
+            chatMessageDao = chatMessageDao,
+            getCurrentUserIdUseCase = getCurrentUserIdUseCase
+        )
     }
 
     @Provides
     @Singleton
-    fun provideGeminiService(): GeminiAIService {
-        return GeminiAIService()
+    fun provideGeminiService(
+        chatMessageDao: ChatMessageDao,
+        getCurrentUserIdUseCase: GetCurrentUserIdUseCase
+    ): GeminiAIService {
+        return GeminiAIService(
+            chatMessageDao = chatMessageDao,
+            getCurrentUserIdUseCase = getCurrentUserIdUseCase
+        )
     }
 }

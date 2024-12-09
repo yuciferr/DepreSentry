@@ -3,6 +3,7 @@ package com.example.depresentry.di
 import android.content.Context
 import androidx.room.Room
 import com.example.depresentry.data.local.DepreSentryDatabase
+import com.example.depresentry.data.local.dao.ChatMessageDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,4 +30,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideProfileImageDao(db: DepreSentryDatabase) = db.profileImageDao
+
+    @Provides
+    fun provideChatMessageDao(database: DepreSentryDatabase): ChatMessageDao {
+        return database.chatMessageDao()
+    }
 } 

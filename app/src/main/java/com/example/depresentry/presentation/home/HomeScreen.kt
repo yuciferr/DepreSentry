@@ -252,9 +252,9 @@ fun HomeScreen(
                     )
                 } else {
                     DailyCard(
-                        score = 84,
-                        message = "Your mental health score is improving, you're on the right track!",
-                        message2 = "Consider reaching out to a friend for a quick chat or coffee.",
+                        score = viewModel.depressionScore.value.toInt(),
+                        message = viewModel.welcomeMessage.value,
+                        message2 = viewModel.affirmationMessage.value,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
                     )
                 }
