@@ -64,8 +64,10 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.compose.material)
     implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.hilt.work)
     kapt(libs.dagger.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    kapt("androidx.hilt:hilt-compiler:1.1.0")
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
@@ -107,6 +109,9 @@ dependencies {
     // Splash Screen
     implementation(libs.androidx.core.splashscreen)
 
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -114,4 +119,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    kapt("androidx.hilt:hilt-compiler:1.2.0")
 }

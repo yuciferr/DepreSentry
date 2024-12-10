@@ -48,47 +48,6 @@ class HomeViewModel @Inject constructor(
 
     init {
         loadUserProfile()
-        loadMessages()
-        calculateScore()
-    }
-
-    private fun loadMessages() {
-        viewModelScope.launch {
-            generateWelcomeMessageUseCase().onSuccess { message ->
-                _welcomeMessage.value = message
-            }
-            generateAffirmationMessageUseCase().onSuccess { message ->
-                _affirmationMessage.value = message
-            }
-        }
-    }
-
-    private fun calculateScore() {
-        viewModelScope.launch {
-            val mockDailyData = DailyData(
-                depressionScore = 0,
-                steps = Steps(8000, false, 350),
-                sleep = Sleep(4.5, "Good", "23:00", "06:30"),
-                mood = 2,
-                screenTime = ScreenTime(
-                    total = 6.5,
-                    byApp = mapOf(
-                        "WhatsApp" to 2.5,
-                        "YouTube" to 1.5,
-                        "Instagram" to 1.0
-                    )
-                )
-            )
-
-            val userId = getCurrentUserIdUseCase()
-            if (userId != null) {
-                getUserProfileUseCase(userId).onSuccess { profile ->
-                    profile?.let {
-                        _depressionScore.value = calculateDepressionScoreUseCase(mockDailyData, it)
-                    }
-                }
-            }
-        }
     }
 
     private fun loadUserProfile() {

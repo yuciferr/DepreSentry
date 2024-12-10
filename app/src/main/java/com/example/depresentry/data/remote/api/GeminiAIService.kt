@@ -132,13 +132,24 @@ class GeminiAIService @Inject constructor(
     }
 
     suspend fun sendDailyData(dailyData: String): Result<String> {
-        saveMessage(dailyData, "user", "daily_data")
-        return sendMessage("Process this daily data and respond with 'ok' if successful: $dailyData")
-            .also { result ->
-                result.onSuccess { response ->
-                    saveMessage(response, "model", "daily_data_response")
-                }
+        return try {
+            Log.d("GeminiAI", "Gönderilecek veri: $dailyData")
+            
+            saveMessage(dailyData, "user", "daily_data")
+            val result = sendMessage("Process this daily data and respond with 'ok' if successful: $dailyData")
+            
+            result.onSuccess { response ->
+                Log.d("GeminiAI", "Başarılı yanıt: $response")
+                saveMessage(response, "model", "daily_data_response")
+            }.onFailure { error ->
+                Log.e("GeminiAI", "Hata detayı: ${error.message}", error)
             }
+            
+            result
+        } catch (e: Exception) {
+            Log.e("GeminiAI", "Beklenmeyen hata: ${e.message}", e)
+            Result.failure(e)
+        }
     }
 
     suspend fun generateWelcomeMessage(): Result<String> {
