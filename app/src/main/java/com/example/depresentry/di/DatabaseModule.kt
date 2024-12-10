@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.example.depresentry.data.local.DepreSentryDatabase
 import com.example.depresentry.data.local.dao.ChatMessageDao
 import com.example.depresentry.data.local.dao.AppStateDao
+import com.example.depresentry.data.local.dao.DailyDataDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,5 +43,11 @@ object DatabaseModule {
     @Singleton
     fun provideAppStateDao(database: DepreSentryDatabase): AppStateDao {
         return database.appStateDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDailyDataDao(database: DepreSentryDatabase): DailyDataDao {
+        return database.dailyDataDao()
     }
 } 

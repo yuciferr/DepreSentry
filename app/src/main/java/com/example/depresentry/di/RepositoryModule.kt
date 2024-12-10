@@ -2,6 +2,7 @@ package com.example.depresentry.di
 
 import com.example.depresentry.data.local.dao.ChatMessageDao
 import com.example.depresentry.data.local.dao.ProfileImageDao
+import com.example.depresentry.data.local.dao.DailyDataDao
 import com.example.depresentry.data.remote.api.FirebaseAuthService
 import com.example.depresentry.data.remote.api.FireStoreDatabaseService
 import com.example.depresentry.data.remote.api.GeminiAIService
@@ -39,9 +40,15 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideUserDataRepository(
-        databaseService: FireStoreDatabaseService
+        databaseService: FireStoreDatabaseService,
+        chatMessageDao: ChatMessageDao,
+        dailyDataDao: DailyDataDao
     ): UserDataRepository {
-        return UserDataRepositoryImpl(databaseService)
+        return UserDataRepositoryImpl(
+            databaseService = databaseService,
+            chatMessageDao = chatMessageDao,
+            dailyDataDao = dailyDataDao
+        )
     }
 
     @Provides

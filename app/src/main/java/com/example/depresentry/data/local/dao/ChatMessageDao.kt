@@ -3,6 +3,7 @@ package com.example.depresentry.data.local.dao
 import androidx.room.*
 import com.example.depresentry.data.local.entity.ChatMessageEntity
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 @Dao
 interface ChatMessageDao {
@@ -11,6 +12,9 @@ interface ChatMessageDao {
 
     @Query("SELECT * FROM chat_messages WHERE userId = :userId ORDER BY timestamp ASC")
     fun getChatHistory(userId: String): Flow<List<ChatMessageEntity>>
+
+    @Query("SELECT * FROM chat_messages WHERE userId = :userId AND date = :date ORDER BY timestamp ASC")
+    fun getChatHistoryByDate(userId: String, date: LocalDate): Flow<List<ChatMessageEntity>>
 
     @Query("DELETE FROM chat_messages WHERE userId = :userId")
     suspend fun clearChatHistory(userId: String)

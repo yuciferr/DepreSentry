@@ -25,7 +25,6 @@ class ProfileEditViewModel @Inject constructor(
     private val getCurrentUserIdUseCase: GetCurrentUserIdUseCase,
     private val saveLocalProfileImageUseCase: SaveLocalProfileImageUseCase,
     private val getLocalProfileImageUseCase: GetLocalProfileImageUseCase,
-    private val processUserProfileUseCase: ProcessUserProfileUseCase
 ) : ViewModel() {
 
     // State variables to track profile data, loading, error, and success
@@ -163,14 +162,7 @@ class ProfileEditViewModel @Inject constructor(
                     // Önce profili güncelle
                     updateUserProfileUseCase(updatedProfile)
                         .onSuccess {
-                            // Başarılı olursa Gemini'ye profil mesajını gönder
-                            processUserProfileUseCase(updatedProfile)
-                                .onSuccess {
-                                    updateSuccess.value = true
-                                }
-                                .onFailure { exception ->
-                                    updateError.value = "Failed to process profile with Gemini: ${exception.message}"
-                                }
+
                         }
                         .onFailure { exception ->
                             updateError.value = "Failed to update profile: ${exception.message}"

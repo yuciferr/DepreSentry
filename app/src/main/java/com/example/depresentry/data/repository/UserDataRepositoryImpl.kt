@@ -1,14 +1,22 @@
 package com.example.depresentry.data.repository
 
+import com.example.depresentry.data.local.dao.ChatMessageDao
+import com.example.depresentry.data.local.dao.DailyDataDao
+import com.example.depresentry.data.local.entity.ChatMessageEntity
+import com.example.depresentry.data.local.entity.DailyDataEntity
 import com.example.depresentry.data.remote.api.FireStoreDatabaseService
 import com.example.depresentry.domain.model.DailyData
 import com.example.depresentry.domain.model.DailyLLM
 import com.example.depresentry.domain.model.PHQ9Result
 import com.example.depresentry.domain.repository.UserDataRepository
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import javax.inject.Inject
 
 class UserDataRepositoryImpl @Inject constructor(
-    private val databaseService: FireStoreDatabaseService
+    private val databaseService: FireStoreDatabaseService,
+    private val chatMessageDao: ChatMessageDao,
+    private val dailyDataDao: DailyDataDao
 ) : UserDataRepository {
     
     override suspend fun saveDailyData(userId: String, date: String, dailyData: DailyData): Result<Boolean> {
@@ -49,5 +57,43 @@ class UserDataRepositoryImpl @Inject constructor(
 
     override suspend fun getMonthlyLLM(userId: String, yearMonth: String): Result<List<DailyLLM>> {
         return databaseService.getMonthlyLLM(userId, yearMonth)
+    }
+
+    // Local Chat Message operations
+    override suspend fun insertLocalChatMessage(message: ChatMessageEntity) {
+        chatMessageDao.insertMessage(message)
+    }
+
+    override fun getLocalChatHistory(userId: String): Flow<List<ChatMessageEntity>> {
+        return chatMessageDao.getChatHistory(userId)
+    }
+
+    override fun getLocalChatHistoryByDate(userId: String, date: LocalDate): Flow<List<ChatMessageEntity>> {
+        return chatMessageDao.getChatHistoryByDate(userId, date)
+    }
+
+    override suspend fun clearLocalChatHistory(userId: String) {
+        chatMessageDao.clearChatHistory(userId)
+    }
+
+    override suspend fun getLastLocalMessageByType(userId: String, messageType: String): ChatMessageEntity? {
+        return chatMessageDao.getLastMessageByType(userId, messageType)
+    }
+
+    // Local Daily Data operations
+    override suspend fun insertLocalDailyData(dailyData: DailyDataEntity) {
+        dailyDataDao.insertDailyData(dailyData)
+    }
+
+    override suspend fun getLocalDailyDataByDate(userId: String, date: LocalDate): DailyDataEntity? {
+        return dailyDataDao.getDailyDataByDate(userId, date)
+    }
+
+    override fun getAllLocalDailyData(userId: String): Flow<List<DailyDataEntity>> {
+        return dailyDataDao.getAllDailyData(userId)
+    }
+
+    override suspend fun clearAllLocalDailyData(userId: String) {
+        dailyDataDao.clearAllDailyData(userId)
     }
 } 
