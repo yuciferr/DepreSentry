@@ -6,6 +6,7 @@ import com.example.depresentry.data.local.DepreSentryDatabase
 import com.example.depresentry.data.local.dao.ChatMessageDao
 import com.example.depresentry.data.local.dao.AppStateDao
 import com.example.depresentry.data.local.dao.DailyDataDao
+import com.example.depresentry.data.local.dao.ProfileImageDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,15 +27,18 @@ object DatabaseModule {
             context,
             DepreSentryDatabase::class.java,
             "depresentry_db"
-        ).fallbackToDestructiveMigration()
-         .build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides
     @Singleton
-    fun provideProfileImageDao(db: DepreSentryDatabase) = db.profileImageDao
+    fun provideProfileImageDao(db: DepreSentryDatabase): ProfileImageDao = 
+        db.profileImageDao
 
     @Provides
+    @Singleton
     fun provideChatMessageDao(database: DepreSentryDatabase): ChatMessageDao {
         return database.chatMessageDao()
     }

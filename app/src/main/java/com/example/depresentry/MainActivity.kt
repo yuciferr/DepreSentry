@@ -14,6 +14,7 @@ import com.example.depresentry.presentation.composables.GradientBackground
 import com.example.depresentry.presentation.navigation.RootNavGraph
 import com.example.depresentry.presentation.theme.DepreSentryTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.work.Constraints
@@ -26,6 +27,7 @@ import com.example.depresentry.worker.DailyDataWorker
 import java.util.Calendar
 import androidx.work.OneTimeWorkRequestBuilder
 import android.util.Log
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -51,13 +53,13 @@ class MainActivity : ComponentActivity() {
         
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Splash screen'i kapat
-        lifecycleScope.launch {
-            keepSplashScreen = false
+        // WorkManager'ı arka planda başlat
+        lifecycleScope.launch(Dispatchers.Default) {
+            setupDailyDataWorker()
+            withContext(Dispatchers.Main) {
+                keepSplashScreen = false
+            }
         }
-
-        // WorkManager'ı başlat
-        setupDailyDataWorker()
 
         setContent {
             DepreSentryTheme {
@@ -78,13 +80,12 @@ class MainActivity : ComponentActivity() {
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
-            // Her gün saat 14:40'da çalışacak şekilde ayarla
             val currentDate = Calendar.getInstance()
             val scheduledTime = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 12)
-                set(Calendar.MINUTE, 57)
+                set(Calendar.HOUR_OF_DAY, 14)
+                set(Calendar.MINUTE, 54)
                 set(Calendar.SECOND, 0)
-
+                
                 if (before(currentDate)) {
                     add(Calendar.DAY_OF_YEAR, 1)
                 }
@@ -100,23 +101,12 @@ class MainActivity : ComponentActivity() {
                 .addTag("daily_data_work")
                 .build()
 
-            WorkManager.getInstance(applicationContext).apply {
-                cancelAllWorkByTag("daily_data_work")
-                enqueueUniquePeriodicWork(
+            WorkManager.getInstance(applicationContext)
+                .enqueueUniquePeriodicWork(
                     "daily_data_work",
                     ExistingPeriodicWorkPolicy.UPDATE,
                     dailyDataRequest
                 )
-            }
-
-            // Hemen çalıştırmak için
-            val immediateWorkRequest = OneTimeWorkRequestBuilder<DailyDataWorker>()
-                .setConstraints(constraints)
-                .addTag("immediate_daily_data_work")
-                .build()
-
-            WorkManager.getInstance(applicationContext)
-                .enqueue(immediateWorkRequest)
 
             Log.d("WorkManager", "Worker başarıyla kuruldu")
         } catch (e: Exception) {

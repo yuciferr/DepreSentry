@@ -6,11 +6,15 @@ import javax.inject.Inject
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.depresentry.data.local.dao.AppStateDao
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import android.util.Log
+import kotlinx.coroutines.withContext
+import androidx.room.Room
+import com.example.depresentry.data.local.DepreSentryDatabase
 
 @HiltAndroidApp
 class DepreSentryApp : Application(), Configuration.Provider {
@@ -24,17 +28,20 @@ class DepreSentryApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         
-        // WorkManager'ı initialize et
+        // Sadece WorkManager'ı initialize et
         WorkManager.initialize(
             this,
             workManagerConfiguration
         )
         
-        initializeApp()
+        // AppState'i arka planda başlat
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
+            initializeApp()
+        }
     }
 
-    private fun initializeApp() {
-        ProcessLifecycleOwner.get().lifecycleScope.launch {
+    private suspend fun initializeApp() {
+        withContext(Dispatchers.IO) {
             appStateDao.initializeAppState()
         }
     }
