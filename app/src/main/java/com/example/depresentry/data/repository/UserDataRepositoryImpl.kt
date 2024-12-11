@@ -68,16 +68,8 @@ class UserDataRepositoryImpl @Inject constructor(
         return chatMessageDao.getChatHistory(userId)
     }
 
-    override fun getLocalChatHistoryByDate(userId: String, date: LocalDate): Flow<List<ChatMessageEntity>> {
-        return chatMessageDao.getChatHistoryByDate(userId, date)
-    }
-
     override suspend fun clearLocalChatHistory(userId: String) {
         chatMessageDao.clearChatHistory(userId)
-    }
-
-    override suspend fun getLastLocalMessageByType(userId: String, messageType: String): ChatMessageEntity? {
-        return chatMessageDao.getLastMessageByType(userId, messageType)
     }
 
     // Local Daily Data operations
@@ -95,5 +87,14 @@ class UserDataRepositoryImpl @Inject constructor(
 
     override suspend fun clearAllLocalDailyData(userId: String) {
         dailyDataDao.clearAllDailyData(userId)
+    }
+
+    override suspend fun getLocalMessageByDateAndTypeAndRole(
+        userId: String,
+        date: LocalDate,
+        messageType: String,
+        role: String
+    ): ChatMessageEntity? {
+        return chatMessageDao.getMessageByDateAndTypeAndRole(userId, date, messageType, role)
     }
 } 

@@ -26,9 +26,13 @@ interface UserDataRepository {
     // Local Chat Message operations
     suspend fun insertLocalChatMessage(message: ChatMessageEntity)
     fun getLocalChatHistory(userId: String): Flow<List<ChatMessageEntity>>
-    fun getLocalChatHistoryByDate(userId: String, date: LocalDate): Flow<List<ChatMessageEntity>>
     suspend fun clearLocalChatHistory(userId: String)
-    suspend fun getLastLocalMessageByType(userId: String, messageType: String): ChatMessageEntity?
+    suspend fun getLocalMessageByDateAndTypeAndRole(
+        userId: String,
+        date: LocalDate,
+        messageType: String,
+        role: String
+    ): ChatMessageEntity?
 
     // Local Daily Data operations
     suspend fun insertLocalDailyData(dailyData: DailyDataEntity)

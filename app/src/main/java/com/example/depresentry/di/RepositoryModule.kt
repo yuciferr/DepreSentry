@@ -13,6 +13,9 @@ import com.example.depresentry.domain.repository.UserRepository
 import com.example.depresentry.domain.repository.UserDataRepository
 import com.example.depresentry.domain.repository.GeminiRepository
 import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
+import com.example.depresentry.domain.usecase.userData.local.ClearLocalChatHistoryUseCase
+import com.example.depresentry.domain.usecase.userData.local.GetLocalChatHistoryUseCase
+import com.example.depresentry.domain.usecase.userData.local.InsertLocalChatMessageUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -68,12 +71,16 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideGeminiService(
-        chatMessageDao: ChatMessageDao,
-        getCurrentUserIdUseCase: GetCurrentUserIdUseCase
+        getCurrentUserIdUseCase: GetCurrentUserIdUseCase,
+        insertLocalChatMessageUseCase: InsertLocalChatMessageUseCase,
+        getLocalChatHistoryUseCase: GetLocalChatHistoryUseCase,
+        clearLocalChatHistoryUseCase: ClearLocalChatHistoryUseCase,
     ): GeminiAIService {
         return GeminiAIService(
-            chatMessageDao = chatMessageDao,
-            getCurrentUserIdUseCase = getCurrentUserIdUseCase
+            getCurrentUserIdUseCase = getCurrentUserIdUseCase,
+            insertLocalChatMessageUseCase = insertLocalChatMessageUseCase,
+            getLocalChatHistoryUseCase = getLocalChatHistoryUseCase,
+            clearLocalChatHistoryUseCase = clearLocalChatHistoryUseCase
         )
     }
 }

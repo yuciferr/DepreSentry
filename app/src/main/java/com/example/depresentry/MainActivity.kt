@@ -1,41 +1,46 @@
 package com.example.depresentry
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.example.depresentry.data.local.dao.AppStateDao
-import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
-import com.example.depresentry.domain.usecase.gemini.ProcessDailyDataUseCase
-import com.example.depresentry.presentation.composables.GradientBackground
-import com.example.depresentry.presentation.navigation.RootNavGraph
-import com.example.depresentry.presentation.theme.DepreSentryTheme
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import javax.inject.Inject
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit
+import com.example.depresentry.data.local.dao.AppStateDao
+import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
+import com.example.depresentry.domain.usecase.profile.GetUserProfileUseCase
+import com.example.depresentry.domain.usecase.userData.GetDailyDataUseCase
+import com.example.depresentry.presentation.composables.GradientBackground
+import com.example.depresentry.presentation.navigation.RootNavGraph
+import com.example.depresentry.presentation.theme.DepreSentryTheme
 import com.example.depresentry.worker.DailyDataWorker
-import java.util.Calendar
-import androidx.work.OneTimeWorkRequestBuilder
-import android.util.Log
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
-    lateinit var processDailyDataUseCase: ProcessDailyDataUseCase
-    
-    @Inject
     lateinit var getCurrentUserIdUseCase: GetCurrentUserIdUseCase
+
+    @Inject
+    lateinit var getUserProfileUseCase: GetUserProfileUseCase
+
+    @Inject
+    lateinit var getDailyDataUseCase: GetDailyDataUseCase
 
     @Inject
     lateinit var appStateDao: AppStateDao
@@ -74,41 +79,83 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun setupDailyDataWorker() {
+    private suspend fun setupDailyDataWorker() {
         try {
+            // 1. Kullanıcı ID kontrolü
+            val userId = getCurrentUserIdUseCase() ?: run {
+                Log.e("WorkManager", "Kullanıcı ID bulunamadı")
+                return
+            }
+
+            // 2. Kullanıcı profili kontrolü
+            val userProfile = getUserProfileUseCase(userId).getOrNull()
+            if (userProfile == null) {
+                Log.e("WorkManager", "Kullanıcı profili bulunamadı. Worker kurulmadı.")
+                return
+            }
+
+            // 3. Bir önceki günün verilerini kontrol et
+            val yesterday = LocalDate.now().minusDays(1).toString()
+            val yesterdayData = getDailyDataUseCase(userId, yesterday).getOrNull()
+
+            // Worker konfigürasyonu
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             val currentDate = Calendar.getInstance()
-            val scheduledTime = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 14)
-                set(Calendar.MINUTE, 54)
-                set(Calendar.SECOND, 0)
-                
-                if (before(currentDate)) {
+            
+            if (yesterdayData != null) {
+                // Dün verisi varsa, sadece periyodik worker'ı kur (gece 00:30 için)
+                val scheduledTime = Calendar.getInstance().apply {
                     add(Calendar.DAY_OF_YEAR, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 30)
+                    set(Calendar.SECOND, 0)
                 }
+
+                val initialDelay = scheduledTime.timeInMillis - currentDate.timeInMillis
+
+                val dailyDataRequest = PeriodicWorkRequestBuilder<DailyDataWorker>(
+                    24, TimeUnit.HOURS
+                )
+                    .setConstraints(constraints)
+                    .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                    .addTag("daily_data_work")
+                    .build()
+
+                WorkManager.getInstance(applicationContext)
+                    .enqueueUniquePeriodicWork(
+                        "daily_data_work",
+                        ExistingPeriodicWorkPolicy.UPDATE,
+                        dailyDataRequest
+                    )
+
+                Log.d("WorkManager", """
+                    Periyodik Worker kuruldu
+                    - Kullanıcı profili mevcut
+                    - Dün verisi mevcut
+                    - Planlanan çalışma zamanı: ${scheduledTime.time}
+                """.trimIndent())
+
+            } else {
+                // Dün verisi yoksa, sadece immediate worker'ı kur
+                val immediateWorkRequest = OneTimeWorkRequestBuilder<DailyDataWorker>()
+                    .setConstraints(constraints)
+                    .addTag("immediate_daily_data_work")
+                    .build()
+
+                WorkManager.getInstance(applicationContext)
+                    .enqueue(immediateWorkRequest)
+
+                Log.d("WorkManager", """
+                    Immediate Worker kuruldu
+                    - Kullanıcı profili mevcut
+                    - Dün verisi yok
+                    - Hemen çalışacak
+                """.trimIndent())
             }
 
-            val initialDelay = scheduledTime.timeInMillis - currentDate.timeInMillis
-
-            val dailyDataRequest = PeriodicWorkRequestBuilder<DailyDataWorker>(
-                24, TimeUnit.HOURS
-            )
-                .setConstraints(constraints)
-                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
-                .addTag("daily_data_work")
-                .build()
-
-            WorkManager.getInstance(applicationContext)
-                .enqueueUniquePeriodicWork(
-                    "daily_data_work",
-                    ExistingPeriodicWorkPolicy.UPDATE,
-                    dailyDataRequest
-                )
-
-            Log.d("WorkManager", "Worker başarıyla kuruldu")
         } catch (e: Exception) {
             Log.e("WorkManager", "Worker kurulumunda hata: ${e.message}", e)
         }

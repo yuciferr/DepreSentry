@@ -15,6 +15,8 @@ import android.util.Log
 import kotlinx.coroutines.withContext
 import androidx.room.Room
 import com.example.depresentry.data.local.DepreSentryDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 
 @HiltAndroidApp
 class DepreSentryApp : Application(), Configuration.Provider {
@@ -25,22 +27,31 @@ class DepreSentryApp : Application(), Configuration.Provider {
     @Inject
     lateinit var appStateDao: AppStateDao
 
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
         
-        // Sadece WorkManager'ı initialize et
-        WorkManager.initialize(
-            this,
-            workManagerConfiguration
-        )
-        
-        // AppState'i arka planda başlat
-        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
-            initializeApp()
+        // Kritik olmayan işlemleri arka plana al
+        applicationScope.launch(Dispatchers.IO) {
+            initializeWorkManager()
+            initializeAppState()
         }
     }
 
-    private suspend fun initializeApp() {
+    private fun initializeWorkManager() {
+        val config = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .setMinimumLoggingLevel(Log.DEBUG)
+            .build()
+
+        WorkManager.initialize(
+            this,
+            config
+        )
+    }
+
+    private suspend fun initializeAppState() {
         withContext(Dispatchers.IO) {
             appStateDao.initializeAppState()
         }
