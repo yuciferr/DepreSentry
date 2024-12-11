@@ -34,8 +34,9 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideProfileImageDao(db: DepreSentryDatabase): ProfileImageDao = 
-        db.profileImageDao
+    fun provideProfileImageDao(database: DepreSentryDatabase): ProfileImageDao {
+        return database.profileImageDao
+    }
 
     @Provides
     @Singleton

@@ -18,6 +18,7 @@ import com.example.depresentry.data.local.dao.AppStateDao
 import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.example.depresentry.domain.usecase.profile.GetUserProfileUseCase
 import com.example.depresentry.domain.usecase.userData.GetDailyDataUseCase
+import com.example.depresentry.domain.usecase.userData.local.GetLocalMessageByDateAndTypeAndRoleUseCase
 import com.example.depresentry.presentation.composables.GradientBackground
 import com.example.depresentry.presentation.navigation.RootNavGraph
 import com.example.depresentry.presentation.theme.DepreSentryTheme
@@ -44,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var appStateDao: AppStateDao
+
+    @Inject
+    lateinit var getLocalMessageByDateAndTypeAndRoleUseCase: GetLocalMessageByDateAndTypeAndRoleUseCase
 
     private var keepSplashScreen = true
 
@@ -87,6 +91,19 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
+            // 3. Bugünün notification_response mesajını kontrol et
+            val today = LocalDate.now()
+            val todayNotificationResponse = getLocalMessageByDateAndTypeAndRoleUseCase(
+                userId = userId,
+                date = today,
+                messageType = "notifications_response",
+                role = "model"
+            )
+            if (todayNotificationResponse != null){
+                Log.e("WorkManager", "Bu gün için veri var. Worker kurulmadı.")
+                return
+            }
+
             // 2. Kullanıcı profili kontrolü
             val userProfile = getUserProfileUseCase(userId).getOrNull()
             if (userProfile == null) {
@@ -94,7 +111,8 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
-            // 3. Bir önceki günün verilerini kontrol et
+
+            // 4. Bir önceki günün verilerini kontrol et
             val yesterday = LocalDate.now().minusDays(1).toString()
             val yesterdayData = getDailyDataUseCase(userId, yesterday).getOrNull()
 

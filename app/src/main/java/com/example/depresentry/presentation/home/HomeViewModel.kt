@@ -1,21 +1,18 @@
 package com.example.depresentry.presentation.home
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.depresentry.domain.usecase.CalculateDepressionScoreUseCase
 import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.example.depresentry.domain.usecase.profile.GetLocalProfileImageUseCase
 import com.example.depresentry.domain.usecase.profile.GetUserProfileUseCase
-import com.example.depresentry.domain.model.DailyData
-import com.example.depresentry.domain.model.Steps
-import com.example.depresentry.domain.model.Sleep
-import com.example.depresentry.domain.model.ScreenTime
-import com.example.depresentry.domain.usecase.CalculateDepressionScoreUseCase
-import com.example.depresentry.domain.usecase.gemini.GenerateAffirmationMessageUseCase
-import com.example.depresentry.domain.usecase.gemini.GenerateWelcomeMessageUseCase
+import com.example.depresentry.domain.usecase.userData.local.GetLocalMessageByDateAndTypeAndRoleUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,10 +20,14 @@ class HomeViewModel @Inject constructor(
     private val getCurrentUserIdUseCase: GetCurrentUserIdUseCase,
     private val getUserProfileUseCase: GetUserProfileUseCase,
     private val getLocalProfileImageUseCase: GetLocalProfileImageUseCase,
-    private val generateWelcomeMessageUseCase: GenerateWelcomeMessageUseCase,
-    private val generateAffirmationMessageUseCase: GenerateAffirmationMessageUseCase,
-    private val calculateDepressionScoreUseCase: CalculateDepressionScoreUseCase
+    private val calculateDepressionScoreUseCase: CalculateDepressionScoreUseCase,
+    private val getLocalMessageByDateAndTypeAndRoleUseCase: GetLocalMessageByDateAndTypeAndRoleUseCase
 ) : ViewModel() {
+
+    companion object {
+        private const val DEFAULT_WELCOME_MESSAGE = "Welcome! I hope you are having a wonderful day."
+        private const val DEFAULT_AFFIRMATION_MESSAGE = "Every new day is an opportunity for new beginnings. Don't forget to believe in yourself!"
+    }
 
     private val _fullName = mutableStateOf("")
     val fullName = _fullName as State<String>
@@ -48,6 +49,7 @@ class HomeViewModel @Inject constructor(
 
     init {
         loadUserProfile()
+        loadTodayMessages()
     }
 
     private fun loadUserProfile() {
@@ -67,6 +69,41 @@ class HomeViewModel @Inject constructor(
                     }
                 } finally {
                     _isLoading.value = false
+                }
+            }
+        }
+    }
+
+    private fun loadTodayMessages() {
+        val userId = getCurrentUserIdUseCase()
+        if (userId != null) {
+            viewModelScope.launch {
+                try {
+                    val today = LocalDate.now()
+                    
+                    // Welcome mesajı
+                    val welcomeMessage = getLocalMessageByDateAndTypeAndRoleUseCase(
+                        userId = userId,
+                        date = today,
+                        messageType = "welcome_response",
+                        role = "model"
+                    )
+                    _welcomeMessage.value = welcomeMessage?.content ?: DEFAULT_WELCOME_MESSAGE
+
+                    // Affirmation mesajı
+                    val affirmationMessage = getLocalMessageByDateAndTypeAndRoleUseCase(
+                        userId = userId,
+                        date = today,
+                        messageType = "affirmation_response",
+                        role = "model"
+                    )
+                    _affirmationMessage.value = affirmationMessage?.content ?: DEFAULT_AFFIRMATION_MESSAGE
+
+                } catch (e: Exception) {
+                    Log.e("HomeViewModel", "Mesajlar yüklenirken hata oluştu: ${e.message}")
+                    // Hata durumunda da default mesajları göster
+                    _welcomeMessage.value = DEFAULT_WELCOME_MESSAGE
+                    _affirmationMessage.value = DEFAULT_AFFIRMATION_MESSAGE
                 }
             }
         }

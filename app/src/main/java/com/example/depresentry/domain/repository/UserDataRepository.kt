@@ -36,7 +36,28 @@ interface UserDataRepository {
 
     // Local Daily Data operations
     suspend fun insertLocalDailyData(dailyData: DailyDataEntity)
-    suspend fun getLocalDailyDataByDate(userId: String, date: LocalDate): DailyDataEntity?
-    fun getAllLocalDailyData(userId: String): Flow<List<DailyDataEntity>>
+    suspend fun getCurrentDailyData(userId: String): DailyDataEntity?
     suspend fun clearAllLocalDailyData(userId: String)
+    
+    // Yeni update metodları
+    suspend fun updateMood(userId: String, mood: Int)
+    suspend fun updatePHQ9(userId: String, score: Int, answers: List<Int>)
+    suspend fun updateSleep(
+        userId: String,
+        duration: Double,
+        quality: String,
+        startTime: String,
+        endTime: String
+    )
+    suspend fun updateActivity(
+        userId: String,
+        steps: Int,
+        isLeavedHome: Boolean,
+        burnedCalorie: Int
+    )
+    suspend fun updateScreenTime(
+        userId: String,
+        total: Double,
+        byApp: Map<String, Double>
+    )
 } 

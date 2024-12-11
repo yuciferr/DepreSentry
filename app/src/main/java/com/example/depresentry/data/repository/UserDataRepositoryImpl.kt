@@ -77,12 +77,8 @@ class UserDataRepositoryImpl @Inject constructor(
         dailyDataDao.insertDailyData(dailyData)
     }
 
-    override suspend fun getLocalDailyDataByDate(userId: String, date: LocalDate): DailyDataEntity? {
-        return dailyDataDao.getDailyDataByDate(userId, date)
-    }
-
-    override fun getAllLocalDailyData(userId: String): Flow<List<DailyDataEntity>> {
-        return dailyDataDao.getAllDailyData(userId)
+    override suspend fun getCurrentDailyData(userId: String): DailyDataEntity? {
+        return dailyDataDao.getCurrentDailyData(userId)
     }
 
     override suspend fun clearAllLocalDailyData(userId: String) {
@@ -96,5 +92,97 @@ class UserDataRepositoryImpl @Inject constructor(
         role: String
     ): ChatMessageEntity? {
         return chatMessageDao.getMessageByDateAndTypeAndRole(userId, date, messageType, role)
+    }
+
+    override suspend fun updateMood(userId: String, mood: Int) {
+        val currentData = dailyDataDao.getCurrentDailyData(userId)
+        if (currentData == null) {
+            dailyDataDao.insertDailyData(
+                DailyDataEntity(
+                    userId = userId,
+                    mood = mood
+                )
+            )
+        } else {
+            dailyDataDao.updateMood(userId, mood)
+        }
+    }
+
+    override suspend fun updatePHQ9(userId: String, score: Int, answers: List<Int>) {
+        val currentData = dailyDataDao.getCurrentDailyData(userId)
+        if (currentData == null) {
+            dailyDataDao.insertDailyData(
+                DailyDataEntity(
+                    userId = userId,
+                    phq9Score = score,
+                    phq9Answers = answers
+                )
+            )
+        } else {
+            dailyDataDao.updatePHQ9(userId, score, answers)
+        }
+    }
+
+    override suspend fun updateSleep(
+        userId: String,
+        duration: Double,
+        quality: String,
+        startTime: String,
+        endTime: String
+    ) {
+        val currentData = dailyDataDao.getCurrentDailyData(userId)
+        if (currentData == null) {
+            dailyDataDao.insertDailyData(
+                DailyDataEntity(
+                    userId = userId,
+                    sleepDuration = duration,
+                    sleepQuality = quality,
+                    sleepStartTime = startTime,
+                    sleepEndTime = endTime
+                )
+            )
+        } else {
+            dailyDataDao.updateSleep(userId, duration, quality, startTime, endTime)
+        }
+    }
+
+    override suspend fun updateActivity(
+        userId: String,
+        steps: Int,
+        isLeavedHome: Boolean,
+        burnedCalorie: Int
+    ) {
+        val currentData = dailyDataDao.getCurrentDailyData(userId)
+        if (currentData == null) {
+            dailyDataDao.insertDailyData(
+                DailyDataEntity(
+                    userId = userId,
+                    steps = steps,
+                    isLeavedHome = isLeavedHome,
+                    burnedCalorie = burnedCalorie
+                )
+            )
+        } else {
+            dailyDataDao.updateActivity(userId, steps, isLeavedHome, burnedCalorie)
+        }
+    }
+
+    override suspend fun updateScreenTime(
+        userId: String,
+        total: Double,
+        byApp: Map<String, Double>
+    ) {
+        val currentData = dailyDataDao.getCurrentDailyData(userId)
+        if (currentData == null) {
+            dailyDataDao.insertDailyData(
+                DailyDataEntity(
+                    userId = userId,
+                    screenTimeTotal = total,
+                    screenTimeByApp = byApp
+                )
+            )
+        } else {
+            dailyDataDao.updateScreenTime(userId, total, byApp)
+        }
     }
 } 

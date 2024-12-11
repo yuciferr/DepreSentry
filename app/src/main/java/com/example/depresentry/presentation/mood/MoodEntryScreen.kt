@@ -1,10 +1,7 @@
 package com.example.depresentry.presentation.mood
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import android.util.Log
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -19,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.depresentry.R
 import com.example.depresentry.presentation.composables.DetailAppBar
@@ -27,9 +25,40 @@ import com.example.depresentry.presentation.composables.SurveyButton
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.example.depresentry.domain.usecase.userData.local.UpdateMoodUseCase
+
+@HiltViewModel
+class MoodEntryViewModel @Inject constructor(
+    private val getCurrentUserIdUseCase: GetCurrentUserIdUseCase,
+    private val updateMoodUseCase: UpdateMoodUseCase
+) : ViewModel() {
+    fun saveMood(mood: Int) {
+        val userId = getCurrentUserIdUseCase() ?: run {
+            Log.e("MoodEntryViewModel", "UserId bulunamadı, mood kaydedilemedi")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                updateMoodUseCase(userId, mood)
+                Log.d("MoodEntryViewModel", "Mood başarıyla kaydedildi: userId=$userId, mood=$mood")
+            } catch (e: Exception) {
+                Log.e("MoodEntryViewModel", "Mood kaydedilirken hata oluştu: ${e.message}", e)
+            }
+        }
+    }
+}
 
 @Composable
-fun MoodEntryScreen(navController: NavController, onMoodSelected: (Int) -> Unit) {
+fun MoodEntryScreen(
+    navController: NavController,
+    viewModel: MoodEntryViewModel = hiltViewModel()
+) {
     // Remember the selected mood (1 to 5) based on button clicks
     val selectedMood = remember { mutableIntStateOf(-1) }
 
@@ -83,8 +112,8 @@ fun MoodEntryScreen(navController: NavController, onMoodSelected: (Int) -> Unit)
                 painter = painterResource(id = moodOption.image),
                 onClick = {
                     selectedMood.intValue = moodOption.value
-                    // Navigate to the next screen or perform action
-                    onMoodSelected(moodOption.value)
+                    Log.d("MoodEntryScreen", "Mood seçildi: ${moodOption.text} (${moodOption.value})")
+                    viewModel.saveMood(moodOption.value)
                     navController.popBackStack()
                 })
         }

@@ -20,7 +20,7 @@ import com.example.depresentry.data.local.converter.Converters
         AppStateEntity::class,
         DailyDataEntity::class
     ],
-    version = 4
+    version = 5
 )
 @TypeConverters(Converters::class)
 abstract class DepreSentryDatabase : RoomDatabase() {

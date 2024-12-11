@@ -1,5 +1,6 @@
 package com.example.depresentry.presentation.phq9
 
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -28,13 +29,50 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
+import com.example.depresentry.domain.usecase.userData.local.UpdatePHQ9UseCase
 import com.example.depresentry.presentation.composables.DetailAppBar
 import com.example.depresentry.presentation.composables.GradientBackground
 import com.example.depresentry.presentation.composables.SurveyButton
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class PHQ9ViewModel @Inject constructor(
+    private val getCurrentUserIdUseCase: GetCurrentUserIdUseCase,
+    private val updatePHQ9UseCase: UpdatePHQ9UseCase
+) : ViewModel() {
+    fun savePHQ9Result(score: Int, answers: List<Int>) {
+        val userId = getCurrentUserIdUseCase() ?: run {
+            Log.e("PHQ9ViewModel", "UserId bulunamadı, PHQ9 sonuçları kaydedilemedi")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                updatePHQ9UseCase(userId, score, answers)
+                Log.d("PHQ9ViewModel", """
+                    PHQ9 sonuçları başarıyla kaydedildi:
+                    - userId: $userId
+                    - Toplam skor: $score
+                    - Cevaplar: $answers
+                """.trimIndent())
+            } catch (e: Exception) {
+                Log.e("PHQ9ViewModel", "PHQ9 sonuçları kaydedilirken hata oluştu: ${e.message}", e)
+            }
+        }
+    }
+}
 
 @Composable
-fun PHQ9Screen(navController: NavController) {
+fun PHQ9Screen(
+    navController: NavController,
+    viewModel: PHQ9ViewModel = hiltViewModel()
+) {
     // List of questions
     val questions = listOf(
         "Little interest or pleasure in doing things",
@@ -56,15 +94,28 @@ fun PHQ9Screen(navController: NavController) {
     // State variables
     var currentQuestionIndex by remember { mutableIntStateOf(0) }
     var totalScore by remember { mutableIntStateOf(0) }
-    var lastQuestionScore by remember { mutableIntStateOf(0) }
+    val answers = remember { mutableListOf<Int>() }
     val progress = (currentQuestionIndex + 1) / 9f
 
     // Function to handle answer clicks
     fun handleAnswerClick(score: Int) {
+        answers.add(score)
         totalScore += score
+        
+        Log.d("PHQ9Screen", """
+            Soru ${currentQuestionIndex + 1} cevaplandı:
+            - Skor: $score
+            - Toplam skor: $totalScore
+            - Soru: "${questions[currentQuestionIndex]}"
+        """.trimIndent())
+        
         if (currentQuestionIndex == 8) {
-            lastQuestionScore = score
-
+            Log.d("PHQ9Screen", """
+                PHQ9 tamamlandı:
+                - Toplam skor: $totalScore
+                - Tüm cevaplar: ${answers.toList()}
+            """.trimIndent())
+            viewModel.savePHQ9Result(totalScore, answers.toList())
             navController.popBackStack()
         } else {
             currentQuestionIndex += 1

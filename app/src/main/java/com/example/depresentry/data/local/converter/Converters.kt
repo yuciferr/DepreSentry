@@ -8,6 +8,7 @@ import java.time.LocalDate
 class Converters {
     private val gson = Gson()
 
+    // LocalDate converters
     @TypeConverter
     fun fromTimestamp(value: String?): LocalDate? {
         return value?.let { LocalDate.parse(it) }
@@ -18,17 +19,31 @@ class Converters {
         return date?.toString()
     }
 
+    // Map<String, Double> converters
     @TypeConverter
-    fun fromString(value: String?): Map<String, Double> {
-        if (value == null) {
-            return emptyMap()
-        }
-        val mapType = object : TypeToken<Map<String, Double>>() {}.type
-        return gson.fromJson(value, mapType)
+    fun fromStringDoubleMap(value: Map<String, Double>?): String? {
+        return value?.let { gson.toJson(it) }
     }
 
     @TypeConverter
-    fun fromMap(map: Map<String, Double>): String {
-        return gson.toJson(map)
+    fun toStringDoubleMap(value: String?): Map<String, Double>? {
+        return value?.let {
+            val mapType = object : TypeToken<Map<String, Double>>() {}.type
+            gson.fromJson(it, mapType)
+        }
+    }
+
+    // List<Int> converters
+    @TypeConverter
+    fun fromIntList(value: List<Int>?): String? {
+        return value?.let { gson.toJson(it) }
+    }
+
+    @TypeConverter
+    fun toIntList(value: String?): List<Int>? {
+        return value?.let {
+            val listType = object : TypeToken<List<Int>>() {}.type
+            gson.fromJson(it, listType)
+        }
     }
 } 

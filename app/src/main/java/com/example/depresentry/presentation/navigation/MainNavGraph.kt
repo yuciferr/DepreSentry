@@ -27,7 +27,7 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
         composable(MainScreen.Home.route) { HomeScreen(navController) }
         composable(MainScreen.Calendar.route) { CalendarScreen(navController) }
         composable(MainScreen.Profile.route) { ProfileScreen(navController) }
-        composable(MainScreen.MoodEntry.route) { MoodEntryScreen(navController){} }
+        composable(MainScreen.MoodEntry.route) { MoodEntryScreen(navController) }
         composable(MainScreen.PHQ9.route) { PHQ9Screen(navController) }
         composable(MainScreen.EditProfile.route) { ProfileEditScreen(navController) }
         composable(MainScreen.DetailedStats.route) { DetailedStatsScreen(navController, MainScreen.DetailedStats.title!!) }

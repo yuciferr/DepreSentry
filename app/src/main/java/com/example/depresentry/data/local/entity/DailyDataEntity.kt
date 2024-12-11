@@ -7,18 +7,21 @@ import java.time.LocalDate
 @Entity(tableName = "daily_data")
 data class DailyDataEntity(
     @PrimaryKey
+    val id: String = "current_data",
     val date: LocalDate = LocalDate.now(),
     val userId: String,
-    val depressionScore: Int,
-    val steps: Int,
-    val isLeavedHome: Boolean,
-    val burnedCalorie: Int,
-    val sleepDuration: Double,
-    val sleepQuality: String,
-    val sleepStartTime: String,
-    val sleepEndTime: String,
-    val mood: Int,
-    val screenTimeTotal: Double,
-    val screenTimeByApp: Map<String, Double>,
+    val depressionScore: Int? = null,
+    val steps: Int? = null,
+    val isLeavedHome: Boolean? = null,
+    val burnedCalorie: Int? = null,
+    val sleepDuration: Double? = null,
+    val sleepQuality: String? = null,
+    val sleepStartTime: String? = null,
+    val sleepEndTime: String? = null,
+    val mood: Int? = null,
+    val screenTimeTotal: Double? = null,
+    val screenTimeByApp: Map<String, Double>? = null,
+    val phq9Score: Int? = null,
+    val phq9Answers: List<Int>? = null,
     val timestamp: Long = System.currentTimeMillis()
 ) 
