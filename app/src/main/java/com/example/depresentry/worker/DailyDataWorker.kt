@@ -13,8 +13,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import android.util.Log
 import com.example.depresentry.domain.model.DailyData
-import com.example.depresentry.domain.model.ScreenTime
-import com.example.depresentry.domain.model.Sleep
 import com.example.depresentry.domain.model.Steps
 import com.example.depresentry.domain.usecase.gemini.GenerateAffirmationMessageUseCase
 import com.example.depresentry.domain.usecase.gemini.GenerateDailyTodosUseCase
@@ -26,6 +24,8 @@ import java.util.Calendar
 import java.time.LocalDate
 import com.example.depresentry.data.remote.api.GeminiAIService
 import com.example.depresentry.data.remote.api.GeminiState
+import com.example.depresentry.domain.model.ScreenTime
+import com.example.depresentry.domain.model.Sleep
 import kotlinx.coroutines.delay
 
 @HiltWorker

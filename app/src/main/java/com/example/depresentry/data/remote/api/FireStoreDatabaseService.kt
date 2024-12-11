@@ -3,6 +3,7 @@ package com.example.depresentry.data.remote.api
 import android.util.Log
 import com.example.depresentry.domain.model.*
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.YearMonth
@@ -117,7 +118,7 @@ class FireStoreDatabaseService(
             firestore.collection("users")
                 .document(userId)
                 .collection("phq9Results")
-                .document()  // Otomatik ID ile oluştur
+                .document(phq9Result.date)
                 .set(phq9Result)
                 .await()
             Result.success(true)
@@ -131,6 +132,7 @@ class FireStoreDatabaseService(
             val documents = firestore.collection("users")
                 .document(userId)
                 .collection("phq9Results")
+                .orderBy("date", Query.Direction.DESCENDING)
                 .get()
                 .await()
             

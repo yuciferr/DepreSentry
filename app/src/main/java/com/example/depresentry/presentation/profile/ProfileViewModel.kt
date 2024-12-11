@@ -1,5 +1,6 @@
 package com.example.depresentry.presentation.profile
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,6 +8,7 @@ import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.example.depresentry.domain.usecase.auth.LogoutUserUseCase
 import com.example.depresentry.domain.usecase.profile.GetLocalProfileImageUseCase
 import com.example.depresentry.domain.usecase.profile.GetUserProfileUseCase
+import com.example.depresentry.domain.usecase.userData.SyncDailyDataUseCase
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -18,6 +20,7 @@ class ProfileViewModel @Inject constructor(
     private val getUserProfileUseCase: GetUserProfileUseCase,
     private val getLocalProfileImageUseCase: GetLocalProfileImageUseCase,
     private val logoutUserUseCase: LogoutUserUseCase,
+    private val syncDailyDataUseCase: SyncDailyDataUseCase,
     private val auth: FirebaseAuth
 ) : ViewModel() {
 
@@ -62,6 +65,19 @@ class ProfileViewModel @Inject constructor(
                 } finally {
                     isLoading.value = false
                 }
+            }
+        }
+    }
+
+    fun syncData() {
+        viewModelScope.launch {
+            try {
+                val userId = getCurrentUserIdUseCase() ?: return@launch
+                Log.d("ProfileViewModel", "Senkronizasyon başlatılıyor...")
+                syncDailyDataUseCase(userId)
+                Log.d("ProfileViewModel", "Senkronizasyon başarıyla tamamlandı")
+            } catch (e: Exception) {
+                Log.e("ProfileViewModel", "Senkronizasyon sırasında hata oluştu", e)
             }
         }
     }

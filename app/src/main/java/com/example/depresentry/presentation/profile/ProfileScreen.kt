@@ -190,8 +190,15 @@ fun ProfileScreen(
                 )
             }
 
-            items(listOf("Language", "Notification Settings", "Theme")) { setting ->
-                SettingsButton(text = setting) { /* Setting action */ }
+            items(listOf("Language", "Notification Settings", "Theme", "Sync Now")) { setting ->
+                if (setting == "Sync Now") {
+                    SettingsButton(
+                        text = setting,
+                        onClick = { viewModel.syncData() }
+                    )
+                } else {
+                    SettingsButton(text = setting) { /* Other settings actions */ }
+                }
             }
 
             item {
