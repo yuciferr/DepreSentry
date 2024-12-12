@@ -27,6 +27,7 @@ import com.example.depresentry.data.remote.api.GeminiState
 import com.example.depresentry.domain.model.ScreenTime
 import com.example.depresentry.domain.model.Sleep
 import kotlinx.coroutines.delay
+import com.example.depresentry.domain.usecase.notification.ScheduleNotificationsUseCase
 
 @HiltWorker
 class DailyDataWorker @AssistedInject constructor(
@@ -41,7 +42,8 @@ class DailyDataWorker @AssistedInject constructor(
     private val generateAffirmationMessageUseCase: GenerateAffirmationMessageUseCase,
     private val generateDailyTodosUseCase: GenerateDailyTodosUseCase,
     private val generateNotificationsUseCase: GenerateNotificationsUseCase,
-    private val geminiAIService: GeminiAIService
+    private val geminiAIService: GeminiAIService,
+    private val scheduleNotificationsUseCase: ScheduleNotificationsUseCase
 ) : CoroutineWorker(context, params) {
 
     private suspend fun waitForGeminiProcess(timeout: Long = 30000L): Boolean {
@@ -148,6 +150,15 @@ class DailyDataWorker @AssistedInject constructor(
                 return@withContext Result.failure()
             }
             Log.d("DailyDataWorker", "Bildirim mesajları oluşturuldu")
+
+            // 10. Bildirimleri zamanla
+            try {
+                scheduleNotificationsUseCase(userId)
+                Log.d("DailyDataWorker", "Günlük bildirimler başarıyla zamanlandı")
+            } catch (e: Exception) {
+                Log.e("DailyDataWorker", "Bildirimler zamanlanırken hata oluştu", e)
+                // Bildirimlerin kurulamaması kritik bir hata değil, worker'ı başarısız yapmıyoruz
+            }
 
             Log.d("DailyDataWorker", "Tüm işlemler başarıyla tamamlandı - ${Calendar.getInstance().time}")
             Result.success()

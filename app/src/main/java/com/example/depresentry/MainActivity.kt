@@ -1,9 +1,14 @@
 package com.example.depresentry
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +20,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.depresentry.data.local.dao.AppStateDao
+import com.example.depresentry.data.service.NotificationManagerService
 import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.example.depresentry.domain.usecase.profile.GetUserProfileUseCase
 import com.example.depresentry.domain.usecase.userData.GetDailyDataUseCase
@@ -49,6 +55,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var getLocalMessageByDateAndTypeAndRoleUseCase: GetLocalMessageByDateAndTypeAndRoleUseCase
 
+    @Inject
+    lateinit var notificationManager: NotificationManagerService
+
     private var keepSplashScreen = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,6 +90,8 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+
+        checkAndRequestNotificationPermission()
     }
 
     private suspend fun setupDailyDataWorker() {
@@ -176,6 +187,42 @@ class MainActivity : ComponentActivity() {
 
         } catch (e: Exception) {
             Log.e("WorkManager", "Worker kurulumunda hata: ${e.message}", e)
+        }
+    }
+
+    private fun checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.d("MainActivity", "Notification permission granted")
+        } else {
+            Log.d("MainActivity", "Notification permission denied")
+            // Kullanıcıya bildirim izni olmadan uygulamanın tam olarak çalışamayacağını bildir
+        }
+    }
+
+    fun scheduleTestNotification(time: String) {
+        try {
+            notificationManager.scheduleNotification(
+                title = "Test Bildirimi 🔔",
+                message = "Bu bir test bildirimidir. Saat: $time",
+                triggerTime = time
+            )
+            Log.d("MainActivity", "Test bildirimi zamanlandı: $time")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Test bildirimi zamanlanırken hata oluştu", e)
         }
     }
 }
