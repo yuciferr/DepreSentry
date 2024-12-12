@@ -86,11 +86,13 @@ class FireStoreDatabaseService(
 
     suspend fun saveDailyData(userId: String, date: String, dailyData: DailyData): Result<Boolean> {
         return try {
+            val dataWithDate = dailyData.copy(date = date)
+            
             firestore.collection("users")
                 .document(userId)
                 .collection("dailyData")
                 .document(date)
-                .set(dailyData)
+                .set(dataWithDate)
                 .await()
             Result.success(true)
         } catch (e: Exception) {
@@ -145,11 +147,13 @@ class FireStoreDatabaseService(
 
     suspend fun saveDailyLLM(userId: String, date: String, dailyLLM: DailyLLM): Result<Boolean> {
         return try {
+            val llmWithDate = dailyLLM.copy(date = date)
+            
             firestore.collection("users")
                 .document(userId)
                 .collection("dailyLLM")
                 .document(date)
-                .set(dailyLLM)
+                .set(llmWithDate)
                 .await()
             Result.success(true)
         } catch (e: Exception) {

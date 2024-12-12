@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import com.google.gson.Gson
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -33,4 +34,8 @@ object FirebaseModule {
     fun provideFirebaseDatabaseService(
         firestore: FirebaseFirestore
     ): FireStoreDatabaseService = FireStoreDatabaseService(firestore)
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
 }

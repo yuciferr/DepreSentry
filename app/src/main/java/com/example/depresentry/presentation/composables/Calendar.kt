@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,7 +47,8 @@ fun Calendar(
     currentMonth: YearMonth = YearMonth.now(),
     initialSelectedDate: LocalDate? = null,
     moodData: Map<LocalDate, Int> = emptyMap(),
-    onDateSelected: (LocalDate) -> Unit = {}
+    onDateSelected: (LocalDate) -> Unit = {},
+    onMonthChanged: (YearMonth) -> Unit = {}
 ) {
     val cardBackgroundColor = Color(0x23E8D1F7)
     val cardStrokeColor = Color(0xFF806691)
@@ -56,6 +58,10 @@ fun Calendar(
 
     var displayedMonth by remember { mutableStateOf(currentMonth) }
     var selectedDate by remember { mutableStateOf(initialSelectedDate) }
+
+    LaunchedEffect(currentMonth) {
+        displayedMonth = currentMonth
+    }
 
     val daysOfWeek = listOf("S", "M", "T", "W", "T", "F", "S")
     val daysInMonth = displayedMonth.lengthOfMonth()
@@ -75,7 +81,10 @@ fun Calendar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { displayedMonth = displayedMonth.minusMonths(1) }) {
+            IconButton(onClick = { 
+                displayedMonth = displayedMonth.minusMonths(1)
+                onMonthChanged(displayedMonth)
+            }) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowLeft,
                     contentDescription = "Previous month",
@@ -92,7 +101,10 @@ fun Calendar(
                 textAlign = TextAlign.Center
             )
 
-            IconButton(onClick = { displayedMonth = displayedMonth.plusMonths(1) }) {
+            IconButton(onClick = { 
+                displayedMonth = displayedMonth.plusMonths(1)
+                onMonthChanged(displayedMonth)
+            }) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowRight,
                     contentDescription = "Next month",
@@ -247,7 +259,8 @@ fun CalendarPreview() {
             currentMonth = YearMonth.now(),
             initialSelectedDate = LocalDate.now(),  // selectedDate yerine initialSelectedDate
             moodData = sampleMoodData,
-            onDateSelected = {}
+            onDateSelected = {},
+            onMonthChanged = {}
         )
     }
 }

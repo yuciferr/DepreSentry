@@ -1,19 +1,20 @@
 package com.example.depresentry.domain.model
 
 data class DailyLLM(
-    val messages: Map<String, String>,
-    val tasks: List<Task>,
-    val notifications: List<Notification>
+    val date: String = "",
+    val messages: Map<String, String> = emptyMap(),
+    val tasks: List<Task> = emptyList(),
+    val notifications: List<Notification> = emptyList()
 )
 
 data class Task(
-    val title: String,
-    val body: String,
-    val status: String
+    val title: String = "",
+    val body: String = "",
+    val status: String = ""
 )
 
 data class Notification(
-    val title: String,
-    val body: String,
-    val pushingTime: String
+    val title: String = "",
+    val body: String = "",
+    val pushingTime: String = ""
 ) 

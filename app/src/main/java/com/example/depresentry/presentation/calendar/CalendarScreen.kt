@@ -29,8 +29,10 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,13 +42,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material.ExperimentalWearMaterialApi
 import androidx.wear.compose.material.FractionalThreshold
@@ -57,56 +60,22 @@ import com.example.depresentry.presentation.composables.Calendar
 import com.example.depresentry.presentation.composables.CircularProgress
 import com.example.depresentry.presentation.composables.GradientBackground
 import java.time.LocalDate
-import java.time.YearMonth
+import android.util.Log
+
 
 @Composable
-fun CalendarScreen(navController: NavHostController) {
+fun CalendarScreen(
+    navController: NavHostController,
+    viewModel: CalendarViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState
 
-    // Tıklanan tarihi saklamak için bir state
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-
-    // Örnek veriler (Bu verileri gerçek verilerle değiştirebilirsiniz)
-    val sampleDaySummaries = mapOf(
-        LocalDate.now() to DaySummary(75, "Happy", 8500, "7h 30m", "3h 15m"),
-        LocalDate.now().minusDays(1) to DaySummary(65, "Calm", 7000, "8h", "2h"),
-        LocalDate.now().minusDays(2) to DaySummary(80, "Energetic", 9000, "6h 45m", "3h 30m")
-    )
-
-    val sampleTodos = mapOf(
-        LocalDate.now() to listOf(
-            TodoItem("Finish report", "Done", "Complete the annual financial report for submission."),
-            TodoItem("Morning run", "In Progress", "Run 5 kilometers around the neighborhood park."),
-            TodoItem("Call mom", "Pending", "Catch up and discuss weekend plans.")
-        ),
-        LocalDate.now().minusDays(1) to listOf(
-            TodoItem("Meditate", "Done", "20-minute guided meditation for relaxation."),
-            TodoItem("Grocery shopping", "In Progress", "Buy vegetables, fruits, and snacks.")
-        ),
-        LocalDate.now().minusDays(2) to listOf(
-            TodoItem("Yoga class", "Pending", "Attend the evening yoga session at the gym."),
-            TodoItem("Read a book", "Done", "Finish reading 'Atomic Habits'.")
-        )
-    )
-
-
-    val sampleMoodData = mapOf(
-        LocalDate.of(2024, 11, 5) to 20, // Score of 20
-        LocalDate.of(2024, 11, 6) to 47, // Score of 47
-        LocalDate.of(2024, 11, 7) to 0, // Score of 35
-        LocalDate.of(2024, 11, 8) to 44, // Score of 34
-        LocalDate.of(2024, 11, 9) to 54, // Score of 34
-        LocalDate.of(2024, 11, 10) to 80, // Score of 80
-        LocalDate.of(2024, 11, 11) to 65, // Score of 65
-        LocalDate.of(2024, 11, 12) to 53, // Score of 53
-        LocalDate.of(2024, 11, 13) to 34, // Score of 34
-        LocalDate.of(2024, 11, 14) to 92, // Score of 92
-        LocalDate.of(2024, 11, 15) to 78, // Score of 78
-        LocalDate.of(2024, 11, 16) to 100, // Score of 34
-        LocalDate.of(2024, 11, 17) to 34, // Score of 34
-        LocalDate.of(2024, 11, 18) to 80, // Score of 34
-        LocalDate.of(2024, 11, 19) to 65, // Score of 34
-        LocalDate.of(2024, 11, 20) to 75, // Score of
-    )
+    // Calendar için depression score map'i
+    val moodData = remember(uiState.monthlyData) {
+        uiState.monthlyData.associate { dailyData ->
+            LocalDate.parse(dailyData.date) to dailyData.depressionScore
+        }
+    }
 
     GradientBackground()
     Scaffold(
@@ -115,60 +84,134 @@ fun CalendarScreen(navController: NavHostController) {
         },
         containerColor = Color.Transparent,
     ) { contentPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding),
-        ) {
-            // Calendar Item
-            item {
-                Calendar(
-                    currentMonth = YearMonth.now(),
-                    initialSelectedDate = selectedDate,
-                    moodData = sampleMoodData,
-                    onDateSelected = { date ->
-                        selectedDate = date
-                    }
-                )
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+            ) {
+                // Calendar
+                item {
+                    Calendar(
+                        currentMonth = uiState.currentYearMonth,
+                        initialSelectedDate = LocalDate.now(), // Today seçili olarak başla
+                        moodData = moodData,
+                        onDateSelected = viewModel::onDateSelected,
+                        onMonthChanged = viewModel::onMonthChanged
+                    )
+                }
 
-            // Day Summary Item
-            item {
-                val daySummary = sampleDaySummaries[selectedDate]
-                    ?: DaySummary(0, "Unknown", 0, "N/A", "N/A")
-                DaySummaryCard(daySummary = daySummary, selectedDate= selectedDate, modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp))
-            }
-
-            // Todo List Items
-            items(sampleTodos[selectedDate] ?: emptyList()) { todoItem ->
-                SwipeableTodoCard(
-                    icon = Icons.Default.CheckCircle,
-                    todoText = todoItem.title,
-                    status = todoItem.status,
-                    detail = todoItem.detail,
-                    isToday = selectedDate == LocalDate.now(),
-                    onStatusChange = {
-                        // Durum güncelleme mantığı
+                // Today's Tasks Section (sadece bugün seçiliyken görünür)
+                if (uiState.selectedDate == LocalDate.now() && uiState.todayTasks.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Today's Tasks",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = Color(0xFFE3CCF2),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                )
+
+                    items(uiState.todayTasks) { task ->
+                        SwipeableTodoCard(
+                            icon = Icons.Default.CheckCircle,
+                            todoText = task.title,
+                            status = task.status,
+                            detail = task.body,
+                            isToday = true,
+                            onStatusChange = { }
+                        )
+                    }
+
+                    // Ayırıcı
+                    item {
+                        Spacer(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(16.dp)
+                        )
+                    }
+                }
+
+                // Seçili gün için veri yoksa mesaj
+                if (uiState.selectedDate != null && uiState.selectedDayData == null) {
+                    item {
+                        Text(
+                            text = "No data available for selected date",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            textAlign = TextAlign.Center,
+                            color = Color(0xFFE3CCF2),
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+
+                // Selected Day Summary
+                uiState.selectedDayData?.let { dailyData ->
+                    item {
+                        DaySummaryCard(
+                            daySummary = DaySummary(
+                                depressionScore = dailyData.depressionScore,
+                                enteredMood = getMoodText(dailyData.mood),
+                                steps = dailyData.steps.steps,
+                                sleepTime = String.format("%.1fh", dailyData.sleep.duration),
+                                screenTime = String.format("%.1fh", dailyData.screenTime.total)
+                            ),
+                            selectedDate = uiState.selectedDate!!,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+
+                // Selected Day Tasks (bugün değilse)
+                uiState.selectedDayTasks?.let { tasks ->
+                    if (uiState.selectedDate != LocalDate.now()) {
+                        items(tasks) { task ->
+                            SwipeableTodoCard(
+                                icon = Icons.Default.CheckCircle,
+                                todoText = task.title,
+                                status = task.status,
+                                detail = task.body,
+                                isToday = false,
+                                onStatusChange = { }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+private fun getMoodText(mood: Int): String {
+    return when (mood) {
+        1 -> "Terrible"
+        2 -> "Bad"
+        3 -> "Average"
+        4 -> "Good"
+        5 -> "Excellent"
+        else -> "Unknown"
+    }
+}
 
 data class DaySummary(
-    val moodScore: Int,
+    val depressionScore: Int,
     val enteredMood: String,
     val steps: Int,
     val sleepTime: String,
     val screenTime: String
-)
-
-data class TodoItem(
-    val title: String,
-    val status: String,
-    val detail: String
 )
 
 @Composable
@@ -201,8 +244,8 @@ fun DaySummaryCard(
                 // Mood Score
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgress(
-                        progress = daySummary.moodScore / 100f,
-                        color = getMoodColor(daySummary.moodScore),
+                        progress = daySummary.depressionScore / 100f,
+                        color = getMoodColor(daySummary.depressionScore),
                         size = 100.dp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -382,6 +425,7 @@ fun SwipeableTodoCard(
     isToday: Boolean,
     onStatusChange: (String) -> Unit
 ) {
+
     val swipeableState = rememberSwipeableState(initialValue = 0)
     val width = with(LocalDensity.current) { 200.dp.toPx() }
     val cardOffset by animateDpAsState(
@@ -415,16 +459,19 @@ fun SwipeableTodoCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = {
+
                     onStatusChange("Done")
                 }) {
                     Icon(Icons.Default.Check, contentDescription = "Mark as Done", tint = Color.Green)
                 }
                 IconButton(onClick = {
+
                     onStatusChange("In Progress")
                 }) {
                     Icon(Icons.Default.Refresh, contentDescription = "Mark as In Progress", tint = Color.Yellow)
                 }
                 IconButton(onClick = {
+
                     onStatusChange("Pending")
                 }) {
                     Icon(Icons.Default.DateRange, contentDescription = "Mark as Pending", tint = Color.Red)
