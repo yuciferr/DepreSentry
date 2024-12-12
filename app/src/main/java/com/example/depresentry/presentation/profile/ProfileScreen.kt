@@ -45,9 +45,17 @@ fun ProfileScreen(
     val localProfileImagePath by viewModel.localProfileImagePath
     val logoutSuccess by viewModel.logoutSuccess
     val isLoading by viewModel.isLoading
+    var isGeneratingData by remember { mutableStateOf(false) }
 
     var switchStates = remember { mutableStateMapOf<String, Boolean>() }
     var showDialogFor by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (!isGeneratingData) {
+            isGeneratingData = true
+            viewModel.generateHistoricalData(30)
+        }
+    }
 
     LaunchedEffect(logoutSuccess) {
         if (logoutSuccess) {
