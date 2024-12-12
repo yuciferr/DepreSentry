@@ -1,5 +1,7 @@
 package com.example.depresentry.di
 
+import UsageStatsRepositoryImpl
+import android.content.Context
 import com.example.depresentry.data.local.dao.ChatMessageDao
 import com.example.depresentry.data.local.dao.ProfileImageDao
 import com.example.depresentry.data.local.dao.DailyDataDao
@@ -9,9 +11,11 @@ import com.example.depresentry.data.remote.api.GeminiAIService
 import com.example.depresentry.data.repository.UserRepositoryImpl
 import com.example.depresentry.data.repository.UserDataRepositoryImpl
 import com.example.depresentry.data.repository.GeminiRepositoryImpl
+import com.example.depresentry.data.service.UsageStatsService
 import com.example.depresentry.domain.repository.UserRepository
 import com.example.depresentry.domain.repository.UserDataRepository
 import com.example.depresentry.domain.repository.GeminiRepository
+import com.example.depresentry.domain.repository.UsageStatsRepository
 import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.example.depresentry.domain.usecase.userData.local.ClearLocalChatHistoryUseCase
 import com.example.depresentry.domain.usecase.userData.local.GetLocalChatHistoryUseCase
@@ -19,6 +23,7 @@ import com.example.depresentry.domain.usecase.userData.local.InsertLocalChatMess
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -82,5 +87,21 @@ object RepositoryModule {
             getLocalChatHistoryUseCase = getLocalChatHistoryUseCase,
             clearLocalChatHistoryUseCase = clearLocalChatHistoryUseCase
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideUsageStatsService(
+        @ApplicationContext context: Context
+    ): UsageStatsService {
+        return UsageStatsService(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUsageStatsRepository(
+        usageStatsService: UsageStatsService
+    ): UsageStatsRepository {
+        return UsageStatsRepositoryImpl(usageStatsService)
     }
 }

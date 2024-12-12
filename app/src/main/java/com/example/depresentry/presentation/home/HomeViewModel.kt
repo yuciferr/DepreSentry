@@ -10,6 +10,9 @@ import com.example.depresentry.domain.usecase.auth.GetCurrentUserIdUseCase
 import com.example.depresentry.domain.usecase.profile.GetLocalProfileImageUseCase
 import com.example.depresentry.domain.usecase.profile.GetUserProfileUseCase
 import com.example.depresentry.domain.usecase.userData.local.GetLocalMessageByDateAndTypeAndRoleUseCase
+import com.example.depresentry.domain.usecase.usageStats.HasUsageStatsPermissionUseCase
+import com.example.depresentry.domain.usecase.usageStats.GetDailyStatsUseCase
+import com.example.depresentry.domain.usecase.usageStats.FormatDurationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -21,7 +24,10 @@ class HomeViewModel @Inject constructor(
     private val getUserProfileUseCase: GetUserProfileUseCase,
     private val getLocalProfileImageUseCase: GetLocalProfileImageUseCase,
     private val calculateDepressionScoreUseCase: CalculateDepressionScoreUseCase,
-    private val getLocalMessageByDateAndTypeAndRoleUseCase: GetLocalMessageByDateAndTypeAndRoleUseCase
+    private val getLocalMessageByDateAndTypeAndRoleUseCase: GetLocalMessageByDateAndTypeAndRoleUseCase,
+    private val hasUsageStatsPermissionUseCase: HasUsageStatsPermissionUseCase,
+    private val getDailyStatsUseCase: GetDailyStatsUseCase,
+    private val formatDurationUseCase: FormatDurationUseCase
 ) : ViewModel() {
 
     companion object {
@@ -47,9 +53,33 @@ class HomeViewModel @Inject constructor(
     private val _depressionScore = mutableStateOf(0.0)
     val depressionScore = _depressionScore as State<Double>
 
+    private val _hasUsageStatsPermission = mutableStateOf(false)
+    val hasUsageStatsPermission = _hasUsageStatsPermission as State<Boolean>
+
+    private val _screenTimeStats = mutableStateOf<Map<String, Long>>(emptyMap())
+    val screenTimeStats = _screenTimeStats as State<Map<String, Long>>
+
     init {
         loadUserProfile()
         loadTodayMessages()
+        checkPermissionAndLoadScreenTime()
+    }
+
+    private fun checkPermissionAndLoadScreenTime() {
+        _hasUsageStatsPermission.value = hasUsageStatsPermissionUseCase()
+        if (_hasUsageStatsPermission.value) {
+            loadScreenTimeStats()
+        }
+    }
+
+    private fun loadScreenTimeStats() {
+        viewModelScope.launch {
+            try {
+                _screenTimeStats.value = getDailyStatsUseCase()
+            } catch (e: Exception) {
+                Log.e("screen time", "Error loading screen time stats homescreen", e)
+            }
+        }
     }
 
     private fun loadUserProfile() {
@@ -107,5 +137,9 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun formatDuration(millis: Long): String {
+        return formatDurationUseCase(millis)
     }
 } 

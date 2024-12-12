@@ -342,15 +342,38 @@ fun HomeScreen(
                             .clip(RoundedCornerShape(16.dp))
                     )
                 } else {
-                    StatsCard(
-                        title = "Screen Time",
-                        stats = listOf("WhatsApp" to 157, "Youtube" to 72),
-                        weeklyData = listOf(2, 3, 4, 2, 3, 4, 1),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
-                        color = Color(0xFFC136A8)
-                    ) {
-                        MainScreen.DetailedStats.title = "Screen Time"
-                        navController.navigate(MainScreen.DetailedStats.route)
+                    if (!viewModel.hasUsageStatsPermission.value) {
+                        // İzin yoksa basit bir kart göster
+                        StatsCard(
+                            title = "Screen Time",
+                            stats = listOf("Permission Required" to 0),
+                            weeklyData = listOf(0, 0, 0, 0, 0, 0, 0),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                            color = Color(0xFFC136A8)
+                        ) {
+                            MainScreen.DetailedStats.title = "Screen Time"
+                            navController.navigate(MainScreen.DetailedStats.route)
+                        }
+                    } else {
+                        // İzin varsa gerçek verileri göster
+                        val screenTimeData = viewModel.screenTimeStats.value
+                        val topApps = screenTimeData.entries
+                            .sortedByDescending { it.value }
+                            .take(2)
+                            .map { (name, duration) -> 
+                                name to (duration / (1000 * 60)).toInt() // Dakikaya çevir
+                            }
+
+                        StatsCard(
+                            title = "Screen Time",
+                            stats = topApps,
+                            weeklyData = listOf(2, 3, 4, 2, 3, 4, 1), // Bu kısmı gerçek verilerle değiştirebilirsiniz
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                            color = Color(0xFFC136A8)
+                        ) {
+                            MainScreen.DetailedStats.title = "Screen Time"
+                            navController.navigate(MainScreen.DetailedStats.route)
+                        }
                     }
                 }
             }

@@ -1,5 +1,7 @@
 package com.example.depresentry.presentation.stats
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
@@ -36,6 +38,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -50,9 +54,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.depresentry.presentation.composables.AnimatedBarChart
 import com.example.depresentry.presentation.composables.AppCategoryItem
@@ -71,16 +78,23 @@ import com.example.depresentry.presentation.composables.SleepPhaseIndicator
 import com.example.depresentry.presentation.composables.SleepQualityChart
 import com.example.depresentry.presentation.composables.SleepTrendsSection
 import com.example.depresentry.presentation.composables.TimeRangeSelector
+import com.example.depresentry.util.AppNameFormatter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun DetailedStatsScreen(navController: NavController, title: String) {
+fun DetailedStatsScreen(
+    navController: NavController, 
+    title: String,
+    viewModel: DetailedStatsViewModel = hiltViewModel()
+) {
     val currentDateTime = SimpleDateFormat("dd.MM.yyyy, HH:mm", Locale.getDefault()).format(Date())
+    val context = LocalContext.current
 
     GradientBackground()
 
@@ -332,8 +346,9 @@ fun DetailedStatsScreen(navController: NavController, title: String) {
         }
         "Screen Time" -> {
             Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
                 DetailAppBar(
                     title = title,
@@ -341,64 +356,119 @@ fun DetailedStatsScreen(navController: NavController, title: String) {
                     onBackClick = { navController.popBackStack() }
                 )
 
-                var selectedTimeRange by remember { mutableStateOf("Daily") }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp)
-                ) {
-                    TimeRangeSelector(
-                        selectedRange = selectedTimeRange,
-                        onRangeSelected = { selectedTimeRange = it }
+                if (!viewModel.hasPermission.value) {
+                    PermissionRequest(
+                        message = "Please grant usage access permission to view app usage statistics",
+                        onRequestPermission = {
+                            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                            context.startActivity(intent)
+                        }
                     )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Box(
+                } else {
+                    var selectedTimeRange by remember { mutableStateOf("Daily") }
+                    val stats = when (selectedTimeRange) {
+                        "Daily" -> viewModel.dailyStats.value
+                        "Weekly" -> viewModel.weeklyStats.value
+                        "Monthly" -> viewModel.monthlyStats.value
+                        else -> emptyMap()
+                    }
+
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp)
+                            .padding(16.dp)
                     ) {
-                        AppUsageDonutChart(
-                            appUsageData = listOf(
-                                Triple("Social", 4.5f, Color(0xFF4CAF50)),
-                                Triple("Entertainment", 2.8f, Color(0xFFFFC107)),
-                                Triple("Productivity", 1.7f, Color(0xFF2196F3))
-                            ),
-                            modifier = Modifier.fillMaxSize()
+                        TimeRangeSelector(
+                            selectedRange = selectedTimeRange,
+                            onRangeSelected = { selectedTimeRange = it }
                         )
                         
-                        Column(
-                            modifier = Modifier.align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        if (stats.isNotEmpty()) {
+                            val totalTime = stats.values.sum()
+                            val categoryStats = stats.groupByCategory()
+                            
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp)
+                            ) {
+                                AppUsageDonutChart(
+                                    appUsageData = categoryStats.toDonutChartData(),
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                
+                                Column(
+                                    modifier = Modifier.align(Alignment.Center),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = viewModel.formatDuration(totalTime),
+                                        color = Color.White,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Total ${selectedTimeRange.lowercase()} usage",
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
                             Text(
-                                text = "9h 45m",
+                                text = "Most Used Apps",
                                 color = Color.White,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 8.dp)
                             )
-                            Text(
-                                text = "Total",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 14.sp
-                            )
+                            
+                            // En çok kullanılan 5 uygulamayı listele
+                            stats.entries.take(5).forEach { (appName, duration) ->
+                                val formattedName = AppNameFormatter.formatAppName(appName)
+                                val category = AppNameFormatter.getCategoryForApp(appName)
+                                
+                                AppCategoryItem(
+                                    category = formattedName,
+                                    duration = viewModel.formatDuration(duration),
+                                    color = category.color,
+                                    percentage = (duration.toFloat() / totalTime)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            if (selectedTimeRange != "Daily") {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text(
+                                    text = "Average daily usage: ${viewModel.formatDuration(totalTime / when(selectedTimeRange) {
+                                        "Weekly" -> 7
+                                        "Monthly" -> 30
+                                        else -> 1
+                                    })}",
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        } else {
+                            // Veri yoksa mesaj göster
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No app usage data available for $selectedTimeRange view",
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    appCategories.forEach { category ->
-                        AppCategoryItem(
-                            category = category.first,
-                            duration = category.second,
-                            color = category.third,
-                            percentage = category.fourth
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
@@ -668,5 +738,92 @@ private fun SleepMetricCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PermissionRequest(
+    message: String,
+    onRequestPermission: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = message,
+            color = Color.White,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = onRequestPermission,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF6200EE)
+            )
+        ) {
+            Text("Grant Permission")
+        }
+    }
+}
+
+@Composable
+private fun AppUsageItem(
+    appName: String,
+    duration: String,
+    percentage: Int
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = appName,
+            color = Color.White,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = duration,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+        Text(
+            text = "$percentage%",
+            color = Color.White
+        )
+    }
+}
+
+private fun formatDuration(millis: Long): String {
+    val hours = millis / (1000 * 60 * 60)
+    val minutes = (millis % (1000 * 60 * 60)) / (1000 * 60)
+    return when {
+        hours > 0 -> String.format("%.1fh", hours + (minutes / 60.0))
+        minutes > 0 -> String.format("%dm", minutes)
+        else -> "< 1m"
+    }
+}
+
+// Stats map'ini kategorilere bölen extension function
+private fun Map<String, Long>.groupByCategory(): Map<AppNameFormatter.AppCategory, Long> {
+    return entries.groupBy(
+        keySelector = { (appName, _) -> AppNameFormatter.getCategoryForApp(appName) },
+        valueTransform = { it.value }
+    ).mapValues { (_, durations) -> durations.sum() }
+}
+
+// Donut chart için veriyi hazırlayan fonksiyon
+private fun Map<AppNameFormatter.AppCategory, Long>.toDonutChartData(): List<Triple<String, Float, Color>> {
+    return entries.map { (category, duration) ->
+        Triple(
+            category.categoryName,
+            duration / (1000f * 60f * 60f), // Saate çevir
+            category.color
+        )
     }
 }
