@@ -7,9 +7,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
@@ -32,12 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -71,17 +63,12 @@ import com.example.depresentry.presentation.composables.AppUsageDonutChart
 import com.example.depresentry.presentation.composables.DetailAppBar
 import com.example.depresentry.presentation.composables.EnhancedCircularProgress
 import com.example.depresentry.presentation.composables.GradientBackground
-import com.example.depresentry.presentation.composables.MoodFactor
-import com.example.depresentry.presentation.composables.MoodFactorsAnalysis
-import com.example.depresentry.presentation.composables.MoodJournalSection
-import com.example.depresentry.presentation.composables.MoodLineGraph
 import com.example.depresentry.presentation.composables.TimeRangeSelector
 import com.example.depresentry.presentation.navigation.MainScreen
 import com.example.depresentry.util.AppNameFormatter
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -261,6 +248,7 @@ fun DetailedStatsScreen(
                         ) {
                             TimeRangeSelector(
                                 selectedRange = selectedTimeRange,
+                                ranges = listOf("Daily", "Weekly", "Monthly"),
                                 onRangeSelected = { selectedTimeRange = it }
                             )
                             
@@ -518,6 +506,7 @@ fun DetailedStatsScreen(
                         ) {
                             TimeRangeSelector(
                                 selectedRange = selectedTimeRange,
+                                ranges = listOf("Daily", "Weekly", "Monthly"),
                                 onRangeSelected = { selectedTimeRange = it }
                             )
 
@@ -612,51 +601,128 @@ fun DetailedStatsScreen(
                 }
             }
             "Mood" -> {
-                var selectedTimeRange by remember { mutableStateOf("Daily") }
-                
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    TimeRangeSelector(selectedTimeRange) { selectedTimeRange = it }
-                    
-                    // Ruh hali grafiği ve etkileşimli noktalar
-                    Box(
+                    var selectedTimeRange by remember { mutableStateOf("Weekly") }
+
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp)
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp)
                     ) {
-                        MoodLineGraph(
-                            moodData = listOf(
-                                "Mon" to 75,
-                                "Tue" to 60,
-                                "Wed" to 85,
-                                "Thu" to 70,
-                                "Fri" to 90,
-                                "Sat" to 95,
-                                "Sun" to 80
-                            ),
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                    
-                    // Faktör analizi
-                    MoodFactorsAnalysis(
-                        factors = listOf(
-                            MoodFactor("Sleep", 0.8f, Icons.Default.Notifications),
-                            MoodFactor("Exercise", 0.6f, Icons.Default.LocationOn),
-                            MoodFactor("Social", 0.9f, Icons.Default.Person),
-                            MoodFactor("Work", 0.4f, Icons.Default.Call)
-                        )
-                    )
-                    
-                    // Günlük notlar ve aktiviteler
-                    if (selectedTimeRange == "Daily") {
-                        MoodJournalSection(
-                            activities = listOf("Walking", "Reading", "Meeting"),
-                            notes = "Felt energetic after morning exercise"
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            TimeRangeSelector(
+                                selectedRange = selectedTimeRange,
+                                ranges = listOf("Weekly", "Monthly"),
+                                onRangeSelected = { selectedTimeRange = it }
+                            )
+                            
+                            IconButton(
+                                onClick = { 
+                                    navController.navigate(MainScreen.MoodEntry.route)
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 8.dp)
+                                    .size(40.dp)
+                                    .background(
+                                        color = Color(0x33FFFFFF),
+                                        shape = CircleShape
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add Mood Entry",
+                                    tint = Color(0xFFF9F775)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Mood Line Chart
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(350.dp)
+                        ) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                val width = size.width
+                                val height = size.height
+                                val maxMood = 5f
+                                
+                                val horizontalLines = 4
+                                val verticalSpace = height / horizontalLines
+                                
+                                // Yatay çizgiler
+                                for (i in 0..horizontalLines) {
+                                    val y = i * verticalSpace
+                                    drawLine(
+                                        color = Color.White.copy(alpha = 0.2f),
+                                        start = Offset(0f, y),
+                                        end = Offset(width, y),
+                                        strokeWidth = 1.dp.toPx()
+                                    )
+                                }
+                                
+                                // ViewModel'dan mood verilerini al
+                                val moodData = if (selectedTimeRange == "Weekly") {
+                                    viewModel.weeklyMood.value
+                                } else {
+                                    viewModel.monthlyMood.value
+                                }
+                                
+                                if (moodData.isNotEmpty()) {
+                                    val points = moodData.mapIndexed { index, mood ->
+                                        val x = width * index / (moodData.size - 1)
+                                        val y = height - (height * (mood.toFloat() / maxMood))
+                                        Offset(x, y)
+                                    }
+                                    
+                                    // Çizgi çizimi
+                                    for (i in 0 until points.size - 1) {
+                                        drawLine(
+                                            color = Color(0xFFFFFBA5),
+                                            start = points[i],
+                                            end = points[i + 1],
+                                            strokeWidth = 4.dp.toPx()
+                                        )
+                                    }
+                                    
+                                    // Noktalar
+                                    points.forEach { point ->
+                                        drawCircle(
+                                            color = Color(0xFFFFF89A),
+                                            radius = 5.dp.toPx(),
+                                            center = point
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Y ekseni emoji'leri
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .align(Alignment.CenterStart)
+                                    .padding(end = 8.dp),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf("😭", "☹️", "😐", "🙂", "😊").reversed().forEach { emoji ->
+                                    Text(
+                                        text = emoji,
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -695,70 +761,6 @@ private data class StatItem(
     val unit: String
 )
 
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-fun WeeklyNavigation(
-    currentWeekOffset: Int,
-    onWeekChange: (Int) -> Unit,
-    timeRange: String,
-    modifier: Modifier = Modifier
-) {
-    var weekStartDate by remember { mutableStateOf("") }
-    var weekEndDate by remember { mutableStateOf("") }
-    
-    LaunchedEffect(currentWeekOffset) {
-        val calendar = Calendar.getInstance()
-        calendar.firstDayOfWeek = Calendar.MONDAY
-        calendar.add(Calendar.WEEK_OF_YEAR, currentWeekOffset)
-        
-        // Haftanın başlangıç tarihi
-        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-        weekStartDate = SimpleDateFormat("MMM dd", Locale.getDefault()).format(calendar.time)
-        
-        // Haftanın bitiş tarihi
-        calendar.add(Calendar.DAY_OF_WEEK, 6)
-        weekEndDate = SimpleDateFormat("MMM dd", Locale.getDefault()).format(calendar.time)
-    }
-    
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { onWeekChange(currentWeekOffset - 1) }) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowLeft,
-                contentDescription = "Previous Week",
-                tint = Color.White
-            )
-        }
-        
-        AnimatedContent(
-            targetState = "$weekStartDate - $weekEndDate",
-            transitionSpec = {
-                slideInHorizontally { width -> width } + fadeIn() with
-                slideOutHorizontally { width -> -width } + fadeOut()
-            },
-            label = "Date Range Animation"
-        ) { dates ->
-            Text(
-                text = dates,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-        
-        IconButton(onClick = { onWeekChange(currentWeekOffset + 1) }) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = "Next Week",
-                tint = Color.White
-            )
-        }
-    }
-}
-
 // Stats veri sınıfı
 data class StatsData(
     val dailyAverage: Int,
@@ -766,39 +768,6 @@ data class StatsData(
     val totalCalories: Int
 )
 
-// İstatistik hesaplama fonksiyonu
-private fun calculateStats(timeRange: String, weekOffset: Int): StatsData {
-    // Gerçek uygulamada bu veriler API'den veya veritabanından gelecek
-    return when (timeRange) {
-        "Weekly" -> when (weekOffset) {
-            0 -> StatsData(
-                dailyAverage = 9245,
-                totalDistance = 42.5f,
-                totalCalories = 2450
-            )
-            -1 -> StatsData(
-                dailyAverage = 8750,
-                totalDistance = 38.2f,
-                totalCalories = 2300
-            )
-            1 -> StatsData(
-                dailyAverage = 9500,
-                totalDistance = 44.8f,
-                totalCalories = 2600
-            )
-            else -> StatsData(
-                dailyAverage = 8900,
-                totalDistance = 40.0f,
-                totalCalories = 2400
-            )
-        }
-        else -> StatsData(
-            dailyAverage = 8800,
-            totalDistance = 165.5f,
-            totalCalories = 9800
-        )
-    }
-}
 
 @Composable
 private fun PermissionRequest(

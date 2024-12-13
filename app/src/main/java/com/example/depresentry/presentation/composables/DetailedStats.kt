@@ -327,6 +327,7 @@ data class SleepMetric(
 @Composable
 fun TimeRangeSelector(
     selectedRange: String,
+    ranges: List<String> = listOf("Daily", "Weekly", "Monthly"),
     onRangeSelected: (String) -> Unit
 ) {
     Row(
@@ -335,7 +336,7 @@ fun TimeRangeSelector(
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.Center
     ) {
-        listOf("Daily", "Weekly", "Monthly").forEach { range ->
+        ranges.forEach { range ->
             Text(
                 text = range,
                 color = if (selectedRange == range) Color(0xFFF9F775) else Color.White,
