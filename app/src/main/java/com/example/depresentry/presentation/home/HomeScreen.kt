@@ -24,11 +24,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +58,7 @@ import com.example.depresentry.presentation.composables.ShimmerEffect
 import com.example.depresentry.presentation.composables.StatsCard
 import com.example.depresentry.presentation.navigation.MainScreen
 import com.example.depresentry.presentation.theme.logoFont
+import com.example.depresentry.util.AppNameFormatter
 
 @Composable
 fun HomeScreen(
@@ -245,7 +244,7 @@ fun HomeScreen(
             }
 
             item {
-                if (isLoading) {
+                if (viewModel.isLoading.value) {
                     ShimmerEffect(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -255,7 +254,7 @@ fun HomeScreen(
                     )
                 } else {
                     DailyCard(
-                        score = viewModel.depressionScore.value.toInt(),
+                        score = viewModel.calculatedDepressionScore.value?.toInt() ?: 0,
                         message = viewModel.welcomeMessage.value,
                         message2 = viewModel.affirmationMessage.value,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)
@@ -264,7 +263,7 @@ fun HomeScreen(
             }
 
             item {
-                if (isLoading) {
+                if (viewModel.isLoading.value) {
                     ShimmerEffect(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -275,8 +274,8 @@ fun HomeScreen(
                 } else {
                     StatsCard(
                         title = "Mood",
-                        stats = listOf("Excellent" to 157),
-                        weeklyData = listOf(2, 4, 3, 5, 3, 4, 1),
+                        stats = listOf(viewModel.currentMoodText.value to (viewModel.currentDailyMood.value ?: 0)),
+                        weeklyData = viewModel.weeklyMoodData.value,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
                         color = Color(0xFFCBC4CF)
                     ) {
@@ -287,13 +286,13 @@ fun HomeScreen(
             }
 
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 5.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    if (isLoading) {
+                if (viewModel.isLoading.value) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 5.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
                         ShimmerEffect(
                             modifier = Modifier
                                 .weight(1f)
@@ -307,10 +306,17 @@ fun HomeScreen(
                                 .height(150.dp)
                                 .clip(RoundedCornerShape(16.dp))
                         )
-                    } else {
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 5.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
                         ActivityCard(
                             title = "Steps",
-                            value = 3124,
+                            value = viewModel.currentDailySteps.value,
                             unit = "Steps",
                             color = Color(0xFFCB6589),
                             targetValue = 10000,
@@ -322,7 +328,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         ActivityCard(
                             title = "Sleep",
-                            value = 6,
+                            value = viewModel.currentDailySleepDuration.value.toInt(),
                             unit = "Hours",
                             color = Color(0xFFE2E06A),
                             targetValue = 8,
@@ -336,7 +342,7 @@ fun HomeScreen(
             }
 
             item {
-                if (isLoading) {
+                if (viewModel.isLoading.value) {
                     ShimmerEffect(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -345,8 +351,8 @@ fun HomeScreen(
                             .clip(RoundedCornerShape(16.dp))
                     )
                 } else {
+                    // Screen Time Stats Card
                     if (!viewModel.hasUsageStatsPermission.value) {
-                        // İzin yoksa basit bir kart göster
                         StatsCard(
                             title = "Screen Time",
                             stats = listOf("Permission Required" to 0),
@@ -358,19 +364,18 @@ fun HomeScreen(
                             navController.navigate(MainScreen.DetailedStats.route)
                         }
                     } else {
-                        // İzin varsa gerçek verileri göster
                         val screenTimeData = viewModel.screenTimeStats.value
                         val topApps = screenTimeData.entries
                             .sortedByDescending { it.value }
                             .take(2)
                             .map { (name, duration) -> 
-                                name to (duration / (1000 * 60)).toInt() // Dakikaya çevir
+                                AppNameFormatter.formatAppName(name) to (duration / (1000 * 60)).toInt()
                             }
 
                         StatsCard(
                             title = "Screen Time",
                             stats = topApps,
-                            weeklyData = listOf(2, 3, 4, 2, 3, 4, 1), // Bu kısmı gerçek verilerle değiştirebilirsiniz
+                            weeklyData = viewModel.weeklyScreenTimeStats.value,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
                             color = Color(0xFFC136A8)
                         ) {
