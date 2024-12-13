@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
         // WorkManager'ı arka planda başlat
         lifecycleScope.launch(Dispatchers.Default) {
             setupDailyDataWorker()
-            setupStepCounterResetWorker()
+            //setupStepCounterResetWorker()
             withContext(Dispatchers.Main) {
                 keepSplashScreen = false
             }

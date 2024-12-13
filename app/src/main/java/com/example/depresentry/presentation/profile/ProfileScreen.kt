@@ -49,7 +49,7 @@ fun ProfileScreen(
     var switchStates = remember { mutableStateMapOf<String, Boolean>() }
     var showDialogFor by remember { mutableStateOf<String?>(null) }
 
-
+    val permissionStates = viewModel.permissionStates
 
     LaunchedEffect(logoutSuccess) {
         if (logoutSuccess) {
@@ -192,7 +192,7 @@ fun ProfileScreen(
                 )
             }
 
-            items(listOf("Language", "Notification Settings", "Theme", "Sync Now")) { setting ->
+            items(listOf("Language", "Theme", "Sync Now")) { setting ->
                 if (setting == "Sync Now") {
                     SettingsButton(
                         text = setting,
@@ -223,19 +223,16 @@ fun ProfileScreen(
             // List of Privacy & Permissions Settings with Toggle Switches
             items(
                 listOf(
-                    "Sleep Tracking",
-                    "Pedometer",
-                    "App Usage Data",
+                    "Notification Settings",
+                    "Physical Activity",
                     "Location",
-                    "Contacts",
-                    "Camera Access"
+                    "App Usage Data"
                 )
             ) { setting ->
-                val isChecked = switchStates[setting] ?: false
                 SettingsButton(
                     text = setting,
                     switch = true,
-                    checked = isChecked,
+                    checked = permissionStates[setting] ?: false,
                     onSwitchChange = {
                         showDialogFor = setting
                     },
@@ -267,12 +264,17 @@ fun ProfileScreen(
         // Confirmation Dialog
         showDialogFor?.let { setting ->
             ConfirmDialog(
-                text = "Are you sure you want to change $setting?",
+                text = if (permissionStates[setting] == true) 
+                    "Are you sure you want to disable $setting? This may affect app functionality." 
+                else 
+                    "This app needs $setting permission to function properly. Would you like to enable it?",
                 onConfirm = {
-                    switchStates[setting] = !(switchStates[setting] ?: false)
+                    viewModel.togglePermission(setting)
                     showDialogFor = null
                 },
-                onDismiss = { showDialogFor = null }
+                onDismiss = { 
+                    showDialogFor = null 
+                }
             )
         }
     }
