@@ -12,12 +12,14 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
@@ -53,7 +56,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.depresentry.domain.model.Sleep
 import com.example.depresentry.presentation.composables.AnimatedBarChart
 import com.example.depresentry.presentation.composables.AppCategoryItem
 import com.example.depresentry.presentation.composables.AppUsageDonutChart
@@ -74,15 +81,17 @@ import com.example.depresentry.presentation.composables.MoodFactorsAnalysis
 import com.example.depresentry.presentation.composables.MoodJournalSection
 import com.example.depresentry.presentation.composables.MoodLineGraph
 import com.example.depresentry.presentation.composables.SleepMetric
-import com.example.depresentry.presentation.composables.SleepPhaseIndicator
-import com.example.depresentry.presentation.composables.SleepQualityChart
-import com.example.depresentry.presentation.composables.SleepTrendsSection
 import com.example.depresentry.presentation.composables.TimeRangeSelector
 import com.example.depresentry.util.AppNameFormatter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Add
+import com.example.depresentry.presentation.navigation.MainScreen
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -93,7 +102,8 @@ fun DetailedStatsScreen(
     viewModel: DetailedStatsViewModel = hiltViewModel()
 ) {
     LaunchedEffect(title) {
-        viewModel.currentScreen = title
+        Log.d("DetailedStatsScreen", "Screen launched with title: $title")
+        viewModel.loadDataForScreen(title)
     }
     
     val currentDateTime = SimpleDateFormat("dd.MM.yyyy, HH:mm", Locale.getDefault()).format(Date())
@@ -267,78 +277,231 @@ fun DetailedStatsScreen(
                             .verticalScroll(rememberScrollState())
                             .padding(16.dp)
                     ) {
-                        TimeRangeSelector(
-                            selectedRange = selectedTimeRange,
-                            onRangeSelected = { selectedTimeRange = it }
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Uyku kalitesi grafiği
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(250.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            SleepQualityChart(
-                                sleepData = listOf(
-                                    "Mon" to 0.8f,
-                                    "Tue" to 0.6f,
-                                    "Wed" to 0.9f,
-                                    "Thu" to 0.7f,
-                                    "Fri" to 0.85f,
-                                    "Sat" to 0.95f,
-                                    "Sun" to 0.75f
-                                ),
-                                modifier = Modifier.fillMaxSize()
+                            TimeRangeSelector(
+                                selectedRange = selectedTimeRange,
+                                onRangeSelected = { selectedTimeRange = it }
                             )
                             
-                            Column(
+                            IconButton(
+                                onClick = { 
+                                    navController.navigate(MainScreen.SleepEntry.route)
+                                },
                                 modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .padding(end = 16.dp),
-                                horizontalAlignment = Alignment.End
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 8.dp)
+                                    .size(40.dp)
+                                    .background(
+                                        color = Color(0x33FFFFFF),
+                                        shape = CircleShape
+                                    )
                             ) {
-                                sleepPhases.forEach { (phase, hours, color) ->
-                                    SleepPhaseIndicator(phase, hours, color)
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add Sleep Entry",
+                                    tint = Color(0xFFF9F775)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        when (selectedTimeRange) {
+                            "Daily" -> {
+                                val dailySleep = viewModel.dailySleep.value
+                                
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0x23E8D1F7)),
+                                    border = BorderStroke(1.dp, Color(0xFF806691))
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(200.dp)
+                                                .padding(8.dp)
+                                        ) {
+                                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                                drawCircle(
+                                                    color = Color(0x40E8D1F7),
+                                                    radius = size.minDimension / 2,
+                                                    style = Stroke(width = 25.dp.toPx(), cap = StrokeCap.Round)
+                                                )
+                                                
+                                                val duration = dailySleep?.duration ?: 0.0
+                                                val sweepAngle = (duration / 24.0 * 360).toFloat()
+                                                
+                                                drawArc(
+                                                    color = Color(0xFF5A3472),
+                                                    startAngle = -90f,
+                                                    sweepAngle = sweepAngle,
+                                                    useCenter = false,
+                                                    style = Stroke(width = 25.dp.toPx(), cap = StrokeCap.Round)
+                                                )
+                                            }
+                                            
+                                            Column(
+                                                modifier = Modifier.align(Alignment.Center),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                val duration = dailySleep?.duration ?: 0.0
+                                                val hours = duration.toInt()
+                                                val minutes = ((duration - hours) * 60).toInt()
+                                                
+                                                Text(
+                                                    text = "${hours}h ${minutes}m",
+                                                    fontSize = 24.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White
+                                                )
+                                                Text(
+                                                    text = "Total Sleep",
+                                                    fontSize = 14.sp,
+                                                    color = Color.White.copy(alpha = 0.7f)
+                                                )
+                                            }
+                                        }
+                                        
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 16.dp),
+                                            horizontalArrangement = Arrangement.SpaceEvenly
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(
+                                                    text = dailySleep?.sleepStartTime ?: "--:--",
+                                                    fontSize = 20.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = Color.White
+                                                )
+                                                Text(
+                                                    text = "Bedtime",
+                                                    fontSize = 12.sp,
+                                                    color = Color.White.copy(alpha = 0.7f)
+                                                )
+                                            }
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(
+                                                    text = dailySleep?.sleepEndTime ?: "--:--",
+                                                    fontSize = 20.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = Color.White
+                                                )
+                                                Text(
+                                                    text = "Wake up",
+                                                    fontSize = 12.sp,
+                                                    color = Color.White.copy(alpha = 0.7f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else -> {
+                                val sleepData = if (selectedTimeRange == "Weekly") {
+                                    viewModel.weeklySleep.value
+                                } else {
+                                    viewModel.monthlySleep.value
+                                }
+                                
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0x23E8D1F7)),
+                                    border = BorderStroke(1.dp, Color(0xFF806691))
+                                ) {
+                                    SleepLineChart(
+                                        sleepData = sleepData,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp)
+                                    )
                                 }
                             }
                         }
                         
                         Spacer(modifier = Modifier.height(24.dp))
                         
-                        // Metrik kartları için Grid yerine Row'lar kullanalım
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(120.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0x23E8D1F7)),
+                                border = BorderStroke(1.dp, Color(0xFF806691))
                             ) {
-                                sleepMetrics.take(2).forEach { metric ->
-                                    SleepMetricCard(
-                                        metric = metric,
-                                        modifier = Modifier.weight(1f)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = viewModel.dailySleep.value?.quality ?: "N/A",
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "Sleep Quality",
+                                        fontSize = 14.sp,
+                                        color = Color.White.copy(alpha = 0.7f)
                                     )
                                 }
                             }
                             
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(120.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0x23E8D1F7)),
+                                border = BorderStroke(1.dp, Color(0xFF806691))
                             ) {
-                                sleepMetrics.takeLast(2).forEach { metric ->
-                                    SleepMetricCard(
-                                        metric = metric,
-                                        modifier = Modifier.weight(1f)
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    val avgDuration = when (selectedTimeRange) {
+                                        "Weekly" -> viewModel.weeklySleep.value.map { it.duration }.average()
+                                        "Monthly" -> viewModel.monthlySleep.value.map { it.duration }.average()
+                                        else -> viewModel.dailySleep.value?.duration ?: 0.0
+                                    }
+                                    val hours = avgDuration.toInt()
+                                    val minutes = ((avgDuration - hours) * 60).toInt()
+                                    
+                                    Text(
+                                        text = "${hours}h ${minutes}m",
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "Average Duration",
+                                        fontSize = 14.sp,
+                                        color = Color.White.copy(alpha = 0.7f)
                                     )
                                 }
                             }
                         }
-                        
-                        Spacer(modifier = Modifier.height(24.dp))
-                        
-                        SleepTrendsSection(selectedTimeRange)
                     }
                 }
             }
@@ -658,81 +821,6 @@ private fun calculateStats(timeRange: String, weekOffset: Int): StatsData {
     }
 }
 
-// Screen Time için mock data
-private val appCategories = listOf(
-    Quadruple("Social Media", "4h 30m", Color(0xFF4CAF50), 0.45f),
-    Quadruple("Entertainment", "2h 45m", Color(0xFFFFC107), 0.28f),
-    Quadruple("Productivity", "1h 40m", Color(0xFF2196F3), 0.17f),
-    Quadruple("Others", "50m", Color(0xFFFF5722), 0.10f)
-)
-
-private data class Quadruple<A, B, C, D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D
-)
-
-// Mood için mock data
-private fun showMoodDetails(moodData: Pair<String, Int>) {
-    // TODO: Implement mood details dialog
-}
-
-// Sleep için mock data
-private val sleepPhases = listOf(
-    Triple("Deep Sleep", 2.5f, Color(0xFF4CAF50)),
-    Triple("Light Sleep", 4.0f, Color(0xFFFFC107)),
-    Triple("REM", 1.5f, Color(0xFF2196F3))
-)
-
-private val sleepMetrics = listOf(
-    SleepMetric("Total Sleep", "8h 15m", Icons.Default.Notifications),
-    SleepMetric("Sleep Score", "85", Icons.Default.Star),
-    SleepMetric("Bedtime", "23:30", Icons.Default.Info),
-    SleepMetric("Wake Time", "07:45", Icons.Default.Info)
-)
-
-// Yeni eklenen composable
-@Composable
-private fun SleepMetricCard(
-    metric: SleepMetric,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.padding(4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0x23E8D1F7)),
-        border = BorderStroke(1.dp, Color(0xFF806691))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = metric.icon,
-                contentDescription = null,
-                tint = Color(0xFFF9F775),
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = metric.title,
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 12.sp
-                )
-                Text(
-                    text = metric.value,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-}
-
 @Composable
 private fun PermissionRequest(
     message: String,
@@ -761,46 +849,6 @@ private fun PermissionRequest(
     }
 }
 
-@Composable
-private fun AppUsageItem(
-    appName: String,
-    duration: String,
-    percentage: Int
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = appName,
-            color = Color.White,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = duration,
-            color = Color.White,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-        Text(
-            text = "$percentage%",
-            color = Color.White
-        )
-    }
-}
-
-private fun formatDuration(millis: Long): String {
-    val hours = millis / (1000 * 60 * 60)
-    val minutes = (millis % (1000 * 60 * 60)) / (1000 * 60)
-    return when {
-        hours > 0 -> String.format("%.1fh", hours + (minutes / 60.0))
-        minutes > 0 -> String.format("%dm", minutes)
-        else -> "< 1m"
-    }
-}
-
 // Stats map'ini kategorilere bölen extension function
 private fun Map<String, Long>.groupByCategory(): Map<AppNameFormatter.AppCategory, Long> {
     return entries.groupBy(
@@ -817,5 +865,78 @@ private fun Map<AppNameFormatter.AppCategory, Long>.toDonutChartData(): List<Tri
             duration / (1000f * 60f * 60f), // Saate çevir
             category.color
         )
+    }
+}
+
+@Composable
+private fun SleepLineChart(
+    sleepData: List<Sleep>,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+            val maxDuration = 24f // Maksimum 24 saat
+            
+            // Yatay çizgiler ve etiketler için
+            val horizontalLines = 6
+            val verticalSpace = height / horizontalLines
+            
+            // Yatay çizgiler
+            for (i in 0..horizontalLines) {
+                val y = height - (i * verticalSpace)
+                drawLine(
+                    color = Color.White.copy(alpha = 0.2f),
+                    start = Offset(0f, y),
+                    end = Offset(width, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+            
+            if (sleepData.isNotEmpty()) {
+                val points = sleepData.mapIndexed { index, sleep ->
+                    val x = width * index / (sleepData.size - 1)
+                    val y = height - (height * (sleep.duration / maxDuration)).toFloat()
+                    Offset(x, y)
+                }
+                
+                // Çizgi çizimi
+                for (i in 0 until points.size - 1) {
+                    drawLine(
+                        color = Color(0xFFFFFBA5),
+                        start = points[i],
+                        end = points[i + 1],
+                        strokeWidth = 4.dp.toPx()
+                    )
+                }
+                
+                // Noktalar
+                points.forEach { point ->
+                    drawCircle(
+                        color = Color(0xFFFFF89A),
+                        radius = 5.dp.toPx(),
+                        center = point
+                    )
+                }
+            }
+        }
+        
+        // Y ekseni etiketleri
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .align(Alignment.CenterStart)
+                .padding(end = 8.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            for (i in 6 downTo 0) {
+                Text(
+                    text = "${i * 4}h",
+                    fontSize = 10.sp,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
     }
 }
