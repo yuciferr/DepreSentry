@@ -95,31 +95,35 @@ class UserDataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateMood(userId: String, mood: Int) {
+        val today = LocalDate.now()
         val currentData = dailyDataDao.getCurrentDailyData(userId)
         if (currentData == null) {
             dailyDataDao.insertDailyData(
                 DailyDataEntity(
                     userId = userId,
+                    date = today,
                     mood = mood
                 )
             )
         } else {
-            dailyDataDao.updateMood(userId, mood)
+            dailyDataDao.updateMood(userId, mood, today)
         }
     }
 
     override suspend fun updatePHQ9(userId: String, score: Int, answers: List<Int>) {
+        val today = LocalDate.now()
         val currentData = dailyDataDao.getCurrentDailyData(userId)
         if (currentData == null) {
             dailyDataDao.insertDailyData(
                 DailyDataEntity(
                     userId = userId,
+                    date = today,
                     phq9Score = score,
                     phq9Answers = answers
                 )
             )
         } else {
-            dailyDataDao.updatePHQ9(userId, score, answers)
+            dailyDataDao.updatePHQ9(userId, score, answers, today)
         }
     }
 
@@ -130,11 +134,13 @@ class UserDataRepositoryImpl @Inject constructor(
         startTime: String,
         endTime: String
     ) {
+        val today = LocalDate.now()
         val currentData = dailyDataDao.getCurrentDailyData(userId)
         if (currentData == null) {
             dailyDataDao.insertDailyData(
                 DailyDataEntity(
                     userId = userId,
+                    date = today,
                     sleepDuration = duration,
                     sleepQuality = quality,
                     sleepStartTime = startTime,
@@ -142,7 +148,7 @@ class UserDataRepositoryImpl @Inject constructor(
                 )
             )
         } else {
-            dailyDataDao.updateSleep(userId, duration, quality, startTime, endTime)
+            dailyDataDao.updateSleep(userId, duration, quality, startTime, endTime, today)
         }
     }
 
@@ -152,18 +158,20 @@ class UserDataRepositoryImpl @Inject constructor(
         isLeavedHome: Boolean,
         burnedCalorie: Int
     ) {
+        val today = LocalDate.now()
         val currentData = dailyDataDao.getCurrentDailyData(userId)
         if (currentData == null) {
             dailyDataDao.insertDailyData(
                 DailyDataEntity(
                     userId = userId,
+                    date = today,
                     steps = steps,
                     isLeavedHome = isLeavedHome,
                     burnedCalorie = burnedCalorie
                 )
             )
         } else {
-            dailyDataDao.updateActivity(userId, steps, isLeavedHome, burnedCalorie)
+            dailyDataDao.updateActivity(userId, steps, isLeavedHome, burnedCalorie, today)
         }
     }
 
@@ -172,17 +180,19 @@ class UserDataRepositoryImpl @Inject constructor(
         total: Double,
         byApp: Map<String, Double>
     ) {
+        val today = LocalDate.now()
         val currentData = dailyDataDao.getCurrentDailyData(userId)
         if (currentData == null) {
             dailyDataDao.insertDailyData(
                 DailyDataEntity(
                     userId = userId,
+                    date = today,
                     screenTimeTotal = total,
                     screenTimeByApp = byApp
                 )
             )
         } else {
-            dailyDataDao.updateScreenTime(userId, total, byApp)
+            dailyDataDao.updateScreenTime(userId, total, byApp, today)
         }
     }
 } 

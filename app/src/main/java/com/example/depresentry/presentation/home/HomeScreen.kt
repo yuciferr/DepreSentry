@@ -81,6 +81,9 @@ fun HomeScreen(
                 onEnterMoodClick = {
                     navController.navigate(MainScreen.MoodEntry.route)
                 },
+                onEnterSleepClick = {
+                    navController.navigate(MainScreen.SleepEntry.route)
+                },
                 expanded = isFabExpanded,
                 onFabToggle = { isFabExpanded = !isFabExpanded }
             )

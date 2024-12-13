@@ -237,6 +237,7 @@ fun DSSwitch(
 fun ExpandableFab(
     onAddPHQ9Click: () -> Unit,
     onEnterMoodClick: () -> Unit,
+    onEnterSleepClick: () -> Unit,
     expanded: Boolean,
     onFabToggle: () -> Unit
 ) {
@@ -264,6 +265,12 @@ fun ExpandableFab(
                 MiniFab(
                     text = "Enter Mood",
                     onClick = onEnterMoodClick,
+                    iconResId = R.drawable.ic_launcher_foreground
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                MiniFab(
+                    text = "Enter Sleep",
+                    onClick = onEnterSleepClick,
                     iconResId = R.drawable.ic_launcher_foreground
                 )
                 Spacer(modifier = Modifier.height(16.dp))

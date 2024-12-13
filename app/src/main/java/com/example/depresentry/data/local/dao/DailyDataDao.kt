@@ -2,6 +2,7 @@ package com.example.depresentry.data.local.dao
 
 import androidx.room.*
 import com.example.depresentry.data.local.entity.DailyDataEntity
+import java.time.LocalDate
 @Dao
 interface DailyDataDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -16,21 +17,27 @@ interface DailyDataDao {
     // Mood güncelleme
     @Query("""
         UPDATE daily_data 
-        SET mood = :mood, timestamp = :timestamp
+        SET mood = :mood, date = :date, timestamp = :timestamp
         WHERE userId = :userId AND id = 'current_data'
     """)
-    suspend fun updateMood(userId: String, mood: Int, timestamp: Long = System.currentTimeMillis())
+    suspend fun updateMood(
+        userId: String, 
+        mood: Int, 
+        date: LocalDate = LocalDate.now(),
+        timestamp: Long = System.currentTimeMillis()
+    )
 
     // PHQ9 güncelleme
     @Query("""
         UPDATE daily_data 
-        SET phq9Score = :score, phq9Answers = :answers, timestamp = :timestamp
+        SET phq9Score = :score, phq9Answers = :answers, date = :date, timestamp = :timestamp
         WHERE userId = :userId AND id = 'current_data'
     """)
     suspend fun updatePHQ9(
         userId: String, 
         score: Int, 
         answers: List<Int>,
+        date: LocalDate = LocalDate.now(),
         timestamp: Long = System.currentTimeMillis()
     )
 
@@ -41,6 +48,7 @@ interface DailyDataDao {
             sleepQuality = :quality, 
             sleepStartTime = :startTime, 
             sleepEndTime = :endTime,
+            date = :date,
             timestamp = :timestamp
         WHERE userId = :userId AND id = 'current_data'
     """)
@@ -50,6 +58,7 @@ interface DailyDataDao {
         quality: String,
         startTime: String,
         endTime: String,
+        date: LocalDate = LocalDate.now(),
         timestamp: Long = System.currentTimeMillis()
     )
 
@@ -59,6 +68,7 @@ interface DailyDataDao {
         SET steps = :steps,
             isLeavedHome = :isLeavedHome,
             burnedCalorie = :burnedCalorie,
+            date = :date,
             timestamp = :timestamp
         WHERE userId = :userId AND id = 'current_data'
     """)
@@ -67,6 +77,7 @@ interface DailyDataDao {
         steps: Int,
         isLeavedHome: Boolean,
         burnedCalorie: Int,
+        date: LocalDate = LocalDate.now(),
         timestamp: Long = System.currentTimeMillis()
     )
 
@@ -75,6 +86,7 @@ interface DailyDataDao {
         UPDATE daily_data 
         SET screenTimeTotal = :total,
             screenTimeByApp = :byApp,
+            date = :date,
             timestamp = :timestamp
         WHERE userId = :userId AND id = 'current_data'
     """)
@@ -82,6 +94,7 @@ interface DailyDataDao {
         userId: String,
         total: Double,
         byApp: Map<String, Double>,
+        date: LocalDate = LocalDate.now(),
         timestamp: Long = System.currentTimeMillis()
     )
 } 

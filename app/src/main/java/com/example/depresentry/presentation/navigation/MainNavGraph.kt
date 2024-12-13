@@ -11,6 +11,7 @@ import com.example.depresentry.presentation.phq9.PHQ9Screen
 import com.example.depresentry.presentation.profile.ProfileEditScreen
 import com.example.depresentry.presentation.profile.ProfileScreen
 import com.example.depresentry.presentation.stats.DetailedStatsScreen
+import com.example.depresentry.presentation.stats.SleepEntryScreen
 
 sealed class MainScreen(val route: String, var title: String? = null) {
     object Home : MainScreen("home")
@@ -20,6 +21,7 @@ sealed class MainScreen(val route: String, var title: String? = null) {
     object PHQ9 : MainScreen("phq9")
     object EditProfile : MainScreen("edit_profile")
     object DetailedStats : MainScreen("detailed_stats")
+    object SleepEntry : MainScreen("sleep_entry")
 }
 
 fun NavGraphBuilder.mainGraph(navController: NavHostController) {
@@ -31,5 +33,6 @@ fun NavGraphBuilder.mainGraph(navController: NavHostController) {
         composable(MainScreen.PHQ9.route) { PHQ9Screen(navController) }
         composable(MainScreen.EditProfile.route) { ProfileEditScreen(navController) }
         composable(MainScreen.DetailedStats.route) { DetailedStatsScreen(navController, MainScreen.DetailedStats.title!!) }
+        composable(MainScreen.SleepEntry.route) { SleepEntryScreen(navController) }
     }
 }
