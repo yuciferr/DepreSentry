@@ -10,6 +10,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +22,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Email
@@ -49,6 +54,8 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,6 +77,7 @@ fun AnimatedBarChart(
     var selectedBar by remember { mutableStateOf<Int?>(null) }
     val barWidth = 40.dp
     val barSpacing = 18.dp
+    val scrollState = rememberScrollState()
 
     val animatedProgress = remember { Animatable(0f) }
 
@@ -85,111 +93,116 @@ fun AnimatedBarChart(
         modifier = modifier,
         horizontalArrangement = Arrangement.Center
     ) {
-        Canvas(
+        Box(
             modifier = Modifier
+                .horizontalScroll(scrollState)
                 .width((barWidth + barSpacing) * data.size)
-                .fillMaxHeight()
-                .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        val barTotalWidth = barWidth.toPx() + barSpacing.toPx()
-                        val index = (offset.x / barTotalWidth).toInt()
-                        selectedBar = if (selectedBar == index) null else index
-                    }
-                }
         ) {
-            val barTotalWidth = barWidth.toPx() + barSpacing.toPx()
-            val availableHeight = size.height - 40.dp.toPx()
-
-            data.forEachIndexed { index, value ->
-                val barHeight = (value / maxValue) * availableHeight * animatedProgress.value
-                val topLeft = Offset(
-                    x = index * barTotalWidth,
-                    y = availableHeight - barHeight
-                )
-
-                // Bar çizimi
-                drawRoundRect(
-                    color = Color(0xFFF9F775),
-                    topLeft = topLeft,
-                    size = androidx.compose.ui.geometry.Size(
-                        width = barWidth.toPx(),
-                        height = barHeight
-                    ),
-                    cornerRadius = CornerRadius(12f)
-                )
-
-                // Label çizimi
-                drawContext.canvas.nativeCanvas.drawText(
-                    labels[index],
-                    topLeft.x + (barWidth.toPx() / 2),
-                    size.height - 10.dp.toPx(),
-                    Paint().apply {
-                        color = android.graphics.Color.WHITE
-                        textAlign = Paint.Align.CENTER
-                        textSize = 12.sp.toPx()
+            Canvas(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset ->
+                            val barTotalWidth = barWidth.toPx() + barSpacing.toPx()
+                            val index = (offset.x / barTotalWidth).toInt()
+                            selectedBar = if (selectedBar == index) null else index
+                        }
                     }
-                )
+            ) {
+                val barTotalWidth = barWidth.toPx() + barSpacing.toPx()
+                val availableHeight = size.height - 40.dp.toPx()
 
-                // Tooltip
-                if (selectedBar == index) {
-                    val percentage = ((value / maxValue) * 100).toInt()
-                    val stepsText = "${value.toInt()} steps"
-                    val percentageText = "$percentage% completed"
+                data.forEachIndexed { index, value ->
+                    val barHeight = (value / maxValue) * availableHeight * animatedProgress.value
+                    val topLeft = Offset(
+                        x = index * barTotalWidth,
+                        y = availableHeight - barHeight
+                    )
 
-                    // Tooltip arka planı
+                    // Bar çizimi
                     drawRoundRect(
-                        color = Color(0xFF2D2D2D),
-                        topLeft = Offset(
-                            x = topLeft.x - 30.dp.toPx(),
-                            y = topLeft.y - 60.dp.toPx()
-                        ),
+                        color = Color(0xFFF9F775),
+                        topLeft = topLeft,
                         size = androidx.compose.ui.geometry.Size(
-                            width = 100.dp.toPx(),
-                            height = 50.dp.toPx()
+                            width = barWidth.toPx(),
+                            height = barHeight
                         ),
-                        cornerRadius = CornerRadius(8f)
+                        cornerRadius = CornerRadius(12f)
                     )
 
-                    // Tooltip ok işareti
-                    val trianglePath = Path().apply {
-                        moveTo(
-                            topLeft.x + barWidth.toPx() / 2 - 8.dp.toPx(),
-                            topLeft.y - 10.dp.toPx()
-                        )
-                        lineTo(
-                            topLeft.x + barWidth.toPx() / 2 + 8.dp.toPx(),
-                            topLeft.y - 10.dp.toPx()
-                        )
-                        lineTo(topLeft.x + barWidth.toPx() / 2, topLeft.y)
-                        close()
-                    }
-                    drawPath(
-                        path = trianglePath,
-                        color = Color(0xFF2D2D2D)
+                    // Label çizimi
+                    drawContext.canvas.nativeCanvas.drawText(
+                        labels[index],
+                        topLeft.x + (barWidth.toPx() / 2),
+                        size.height - 10.dp.toPx(),
+                        Paint().apply {
+                            color = android.graphics.Color.WHITE
+                            textAlign = Paint.Align.CENTER
+                            textSize = 12.sp.toPx()
+                        }
                     )
 
-                    // Tooltip metinleri
-                    drawContext.canvas.nativeCanvas.apply {
-                        drawText(
-                            stepsText,
-                            topLeft.x + (barWidth.toPx() / 2),
-                            topLeft.y - 35.dp.toPx(),
-                            Paint().apply {
-                                color = android.graphics.Color.WHITE
-                                textAlign = Paint.Align.CENTER
-                                textSize = 12.sp.toPx()
-                            }
+                    // Tooltip
+                    if (selectedBar == index) {
+                        val percentage = ((value / maxValue) * 100).toInt()
+                        val stepsText = "${value.toInt()} steps"
+                        val percentageText = "$percentage% completed"
+
+                        // Tooltip arka planı
+                        drawRoundRect(
+                            color = Color(0xFF2D2D2D),
+                            topLeft = Offset(
+                                x = topLeft.x - 30.dp.toPx(),
+                                y = topLeft.y - 60.dp.toPx()
+                            ),
+                            size = androidx.compose.ui.geometry.Size(
+                                width = 100.dp.toPx(),
+                                height = 50.dp.toPx()
+                            ),
+                            cornerRadius = CornerRadius(8f)
                         )
-                        drawText(
-                            percentageText,
-                            topLeft.x + (barWidth.toPx() / 2),
-                            topLeft.y - 20.dp.toPx(),
-                            Paint().apply {
-                                color = android.graphics.Color.WHITE
-                                textAlign = Paint.Align.CENTER
-                                textSize = 12.sp.toPx()
-                            }
+
+                        // Tooltip ok işareti
+                        val trianglePath = Path().apply {
+                            moveTo(
+                                topLeft.x + barWidth.toPx() / 2 - 8.dp.toPx(),
+                                topLeft.y - 10.dp.toPx()
+                            )
+                            lineTo(
+                                topLeft.x + barWidth.toPx() / 2 + 8.dp.toPx(),
+                                topLeft.y - 10.dp.toPx()
+                            )
+                            lineTo(topLeft.x + barWidth.toPx() / 2, topLeft.y)
+                            close()
+                        }
+                        drawPath(
+                            path = trianglePath,
+                            color = Color(0xFF2D2D2D)
                         )
+
+                        // Tooltip metinleri
+                        drawContext.canvas.nativeCanvas.apply {
+                            drawText(
+                                stepsText,
+                                topLeft.x + (barWidth.toPx() / 2),
+                                topLeft.y - 35.dp.toPx(),
+                                Paint().apply {
+                                    color = android.graphics.Color.WHITE
+                                    textAlign = Paint.Align.CENTER
+                                    textSize = 12.sp.toPx()
+                                }
+                            )
+                            drawText(
+                                percentageText,
+                                topLeft.x + (barWidth.toPx() / 2),
+                                topLeft.y - 20.dp.toPx(),
+                                Paint().apply {
+                                    color = android.graphics.Color.WHITE
+                                    textAlign = Paint.Align.CENTER
+                                    textSize = 12.sp.toPx()
+                                }
+                            )
+                        }
                     }
                 }
             }

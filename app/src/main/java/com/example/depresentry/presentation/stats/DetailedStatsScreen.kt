@@ -2,6 +2,7 @@ package com.example.depresentry.presentation.stats
 
 import android.content.Intent
 import android.provider.Settings
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
@@ -13,6 +14,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,22 +27,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -74,24 +71,19 @@ import com.example.depresentry.presentation.composables.AppUsageDonutChart
 import com.example.depresentry.presentation.composables.DetailAppBar
 import com.example.depresentry.presentation.composables.EnhancedCircularProgress
 import com.example.depresentry.presentation.composables.GradientBackground
-import com.example.depresentry.presentation.composables.LocationData
-import com.example.depresentry.presentation.composables.LocationInsights
 import com.example.depresentry.presentation.composables.MoodFactor
 import com.example.depresentry.presentation.composables.MoodFactorsAnalysis
 import com.example.depresentry.presentation.composables.MoodJournalSection
 import com.example.depresentry.presentation.composables.MoodLineGraph
-import com.example.depresentry.presentation.composables.SleepMetric
 import com.example.depresentry.presentation.composables.TimeRangeSelector
+import com.example.depresentry.presentation.navigation.MainScreen
 import com.example.depresentry.util.AppNameFormatter
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.Add
-import com.example.depresentry.presentation.navigation.MainScreen
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -131,26 +123,17 @@ fun DetailedStatsScreen(
                     var animationProgress by remember { mutableStateOf(0f) }
                     
                     EnhancedCircularProgress(
-                        progress = 0.75f,
-                        steps = 7500,
+                        progress = (viewModel.dailySteps.value?.steps?.toFloat() ?: 0f) / 10000f,
+                        steps = viewModel.dailySteps.value?.steps ?: 0,
                         goal = 10000,
-                        calories = 320,
+                        calories = viewModel.dailySteps.value?.burnedCalorie ?: 0,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(24.dp))
-                    
-                    WeeklyNavigation(
-                        currentWeekOffset = currentWeekOffset,
-                        onWeekChange = { currentWeekOffset = it },
-                        timeRange = timeRange,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -164,7 +147,7 @@ fun DetailedStatsScreen(
                                 modifier = Modifier
                                     .clickable { 
                                         timeRange = range
-                                        currentWeekOffset = 0 // Görünüm değiştiğinde offset'i sıfırla
+                                        currentWeekOffset = 0
                                     }
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
                                 fontWeight = if (timeRange == range) FontWeight.Bold else FontWeight.Normal
@@ -174,17 +157,26 @@ fun DetailedStatsScreen(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
+                    val chartData = if (timeRange == "Weekly") {
+                        viewModel.weeklySteps.value.map { it.steps.toFloat() }
+                    } else {
+                        viewModel.monthlySteps.value.map { it.steps.toFloat() }
+                    }
+                    
+                    val labels = if (timeRange == "Weekly") {
+                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                    } else {
+                        val today = LocalDate.now()
+                        (0 until viewModel.monthlySteps.value.size).map { index ->
+                            val date = today.minusDays(index.toLong())
+                            date.format(DateTimeFormatter.ofPattern("MMM d"))
+                        }.reversed()
+                    }
+                    
                     AnimatedBarChart(
-                        data = if (timeRange == "Weekly")
-                            listOf(6500f, 8200f, 7400f, 9100f, 8800f, 7900f, 7500f)
-                        else
-                            listOf(7200f, 6800f, 8500f, 7900f, 8200f, 7600f, 8900f, 
-                                  9100f, 8400f, 7800f, 8300f, 7700f, 8100f, 8600f),
+                        data = chartData,
                         maxValue = 10000f,
-                        labels = if (timeRange == "Weekly")
-                            listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                        else
-                            (1..14).map { it.toString() },
+                        labels = labels,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
@@ -196,8 +188,22 @@ fun DetailedStatsScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
+                    val currentSteps = if (timeRange == "Weekly") {
+                        viewModel.weeklySteps.value
+                    } else {
+                        viewModel.monthlySteps.value
+                    }
+                    
+                    val dailyAverage = currentSteps.map { it.steps }.average().toInt()
+                    val totalDistance = currentSteps.sumOf { it.steps } * 0.0008
+                    val totalCalories = currentSteps.sumOf { it.burnedCalorie }
+                    
                     AnimatedContent(
-                        targetState = calculateStats(timeRange, currentWeekOffset),
+                        targetState = StatsData(
+                            dailyAverage = dailyAverage,
+                            totalDistance = totalDistance.toFloat(),
+                            totalCalories = totalCalories
+                        ),
                         transitionSpec = {
                             slideInVertically { height -> height } + fadeIn() with
                             slideOutVertically { height -> -height } + fadeOut()
@@ -220,7 +226,7 @@ fun DetailedStatsScreen(
                             StatisticItem(
                                 stat = StatItem(
                                     title = "Total Distance",
-                                    value = "${stats.totalDistance}",
+                                    value = String.format("%.1f", stats.totalDistance),
                                     unit = "km"
                                 )
                             )
@@ -233,33 +239,6 @@ fun DetailedStatsScreen(
                             )
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    LocationInsights(
-                        locations = listOf(
-                            LocationData(
-                                name = "Home",
-                                timeSpent = "14h 30m",
-                                steps = 2500,
-                                icon = Icons.Default.Home
-                            ),
-                            LocationData(
-                                name = "Office",
-                                timeSpent = "8h 15m",
-                                steps = 4200,
-                                icon = Icons.Default.Email
-                            ),
-                            LocationData(
-                                name = "Gym",
-                                timeSpent = "1h 45m",
-                                steps = 800,
-                                icon = Icons.Default.ShoppingCart
-                            )
-                        ),
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
