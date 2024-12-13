@@ -83,7 +83,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -93,289 +92,179 @@ fun DetailedStatsScreen(
     title: String,
     viewModel: DetailedStatsViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(title) {
+        viewModel.currentScreen = title
+    }
+    
     val currentDateTime = SimpleDateFormat("dd.MM.yyyy, HH:mm", Locale.getDefault()).format(Date())
     val context = LocalContext.current
 
     GradientBackground()
+    
+    Column(modifier = Modifier.fillMaxSize().padding(top=16.dp)) {
+        DetailAppBar(
+            title = title,
+            detail = "Today, $currentDateTime",
+            onBackClick = { navController.popBackStack() }
+        )
 
-    when (title) {
-        "Steps" -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                DetailAppBar(
-                    title = title,
-                    detail = "Today, $currentDateTime",
-                    onBackClick = { navController.popBackStack() }
-                )
-
-                var timeRange by remember { mutableStateOf("Weekly") }
-                var currentWeekOffset by remember { mutableStateOf(0) }
-                var animationProgress by remember { mutableStateOf(0f) }
-                
-                EnhancedCircularProgress(
-                    progress = 0.75f,
-                    steps = 7500,
-                    goal = 10000,
-                    calories = 320,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                WeeklyNavigation(
-                    currentWeekOffset = currentWeekOffset,
-                    onWeekChange = { currentWeekOffset = it },
-                    timeRange = timeRange,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    listOf("Weekly", "Monthly").forEach { range ->
-                        Text(
-                            text = range,
-                            color = if (timeRange == range) Color(0xFFF9F775) else Color.White,
-                            modifier = Modifier
-                                .clickable { 
-                                    timeRange = range
-                                    currentWeekOffset = 0 // Görünüm değiştiğinde offset'i sıfırla
-                                }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            fontWeight = if (timeRange == range) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                AnimatedBarChart(
-                    data = if (timeRange == "Weekly")
-                        listOf(6500f, 8200f, 7400f, 9100f, 8800f, 7900f, 7500f)
-                    else
-                        listOf(7200f, 6800f, 8500f, 7900f, 8200f, 7600f, 8900f, 
-                              9100f, 8400f, 7800f, 8300f, 7700f, 8100f, 8600f),
-                    maxValue = 10000f,
-                    labels = if (timeRange == "Weekly")
-                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                    else
-                        (1..14).map { it.toString() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(250.dp),
-                    onBarHeightChanged = { progress -> 
-                        animationProgress = progress
-                    }
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                AnimatedContent(
-                    targetState = calculateStats(timeRange, currentWeekOffset),
-                    transitionSpec = {
-                        slideInVertically { height -> height } + fadeIn() with
-                        slideOutVertically { height -> -height } + fadeOut()
-                    },
-                    label = "Stats Animation"
-                ) { stats ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatisticItem(
-                            stat = StatItem(
-                                title = "Daily Average",
-                                value = "${stats.dailyAverage}",
-                                unit = "steps"
-                            )
-                        )
-                        StatisticItem(
-                            stat = StatItem(
-                                title = "Total Distance",
-                                value = "${stats.totalDistance}",
-                                unit = "km"
-                            )
-                        )
-                        StatisticItem(
-                            stat = StatItem(
-                                title = "Calories",
-                                value = "${stats.totalCalories}",
-                                unit = "kcal"
-                            )
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                LocationInsights(
-                    locations = listOf(
-                        LocationData(
-                            name = "Home",
-                            timeSpent = "14h 30m",
-                            steps = 2500,
-                            icon = Icons.Default.Home
-                        ),
-                        LocationData(
-                            name = "Office",
-                            timeSpent = "8h 15m",
-                            steps = 4200,
-                            icon = Icons.Default.Email
-                        ),
-                        LocationData(
-                            name = "Gym",
-                            timeSpent = "1h 45m",
-                            steps = 800,
-                            icon = Icons.Default.ShoppingCart
-                        )
-                    ),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-        }
-        "Sleep" -> {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                DetailAppBar(
-                    title = title,
-                    detail = "Today, $currentDateTime",
-                    onBackClick = { navController.popBackStack() }
-                )
-
-                var selectedTimeRange by remember { mutableStateOf("Daily") }
-
+        when (title) {
+            "Steps" -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    TimeRangeSelector(
-                        selectedRange = selectedTimeRange,
-                        onRangeSelected = { selectedTimeRange = it }
+                    var timeRange by remember { mutableStateOf("Weekly") }
+                    var currentWeekOffset by remember { mutableStateOf(0) }
+                    var animationProgress by remember { mutableStateOf(0f) }
+                    
+                    EnhancedCircularProgress(
+                        progress = 0.75f,
+                        steps = 7500,
+                        goal = 10000,
+                        calories = 320,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    WeeklyNavigation(
+                        currentWeekOffset = currentWeekOffset,
+                        onWeekChange = { currentWeekOffset = it },
+                        timeRange = timeRange,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // Uyku kalitesi grafiği
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(250.dp)
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        SleepQualityChart(
-                            sleepData = listOf(
-                                "Mon" to 0.8f,
-                                "Tue" to 0.6f,
-                                "Wed" to 0.9f,
-                                "Thu" to 0.7f,
-                                "Fri" to 0.85f,
-                                "Sat" to 0.95f,
-                                "Sun" to 0.75f
-                            ),
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(end = 16.dp),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            sleepPhases.forEach { (phase, hours, color) ->
-                                SleepPhaseIndicator(phase, hours, color)
-                            }
+                        listOf("Weekly", "Monthly").forEach { range ->
+                            Text(
+                                text = range,
+                                color = if (timeRange == range) Color(0xFFF9F775) else Color.White,
+                                modifier = Modifier
+                                    .clickable { 
+                                        timeRange = range
+                                        currentWeekOffset = 0 // Görünüm değiştiğinde offset'i sıfırla
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                fontWeight = if (timeRange == range) FontWeight.Bold else FontWeight.Normal
+                            )
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     
-                    // Metrik kartları için Grid yerine Row'lar kullanalım
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            sleepMetrics.take(2).forEach { metric ->
-                                SleepMetricCard(
-                                    metric = metric,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            sleepMetrics.takeLast(2).forEach { metric ->
-                                SleepMetricCard(
-                                    metric = metric,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    SleepTrendsSection(selectedTimeRange)
-                }
-            }
-        }
-        "Screen Time" -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                DetailAppBar(
-                    title = title,
-                    detail = "Today, $currentDateTime",
-                    onBackClick = { navController.popBackStack() }
-                )
-
-                if (!viewModel.hasPermission.value) {
-                    PermissionRequest(
-                        message = "Please grant usage access permission to view app usage statistics",
-                        onRequestPermission = {
-                            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                            context.startActivity(intent)
+                    AnimatedBarChart(
+                        data = if (timeRange == "Weekly")
+                            listOf(6500f, 8200f, 7400f, 9100f, 8800f, 7900f, 7500f)
+                        else
+                            listOf(7200f, 6800f, 8500f, 7900f, 8200f, 7600f, 8900f, 
+                                  9100f, 8400f, 7800f, 8300f, 7700f, 8100f, 8600f),
+                        maxValue = 10000f,
+                        labels = if (timeRange == "Weekly")
+                            listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                        else
+                            (1..14).map { it.toString() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .height(250.dp),
+                        onBarHeightChanged = { progress -> 
+                            animationProgress = progress
                         }
                     )
-                } else {
-                    var selectedTimeRange by remember { mutableStateOf("Daily") }
-                    val stats = when (selectedTimeRange) {
-                        "Daily" -> viewModel.dailyStats.value
-                        "Weekly" -> viewModel.weeklyStats.value
-                        "Monthly" -> viewModel.monthlyStats.value
-                        else -> emptyMap()
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    AnimatedContent(
+                        targetState = calculateStats(timeRange, currentWeekOffset),
+                        transitionSpec = {
+                            slideInVertically { height -> height } + fadeIn() with
+                            slideOutVertically { height -> -height } + fadeOut()
+                        },
+                        label = "Stats Animation"
+                    ) { stats ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            StatisticItem(
+                                stat = StatItem(
+                                    title = "Daily Average",
+                                    value = "${stats.dailyAverage}",
+                                    unit = "steps"
+                                )
+                            )
+                            StatisticItem(
+                                stat = StatItem(
+                                    title = "Total Distance",
+                                    value = "${stats.totalDistance}",
+                                    unit = "km"
+                                )
+                            )
+                            StatisticItem(
+                                stat = StatItem(
+                                    title = "Calories",
+                                    value = "${stats.totalCalories}",
+                                    unit = "kcal"
+                                )
+                            )
+                        }
                     }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    LocationInsights(
+                        locations = listOf(
+                            LocationData(
+                                name = "Home",
+                                timeSpent = "14h 30m",
+                                steps = 2500,
+                                icon = Icons.Default.Home
+                            ),
+                            LocationData(
+                                name = "Office",
+                                timeSpent = "8h 15m",
+                                steps = 4200,
+                                icon = Icons.Default.Email
+                            ),
+                            LocationData(
+                                name = "Gym",
+                                timeSpent = "1h 45m",
+                                steps = 800,
+                                icon = Icons.Default.ShoppingCart
+                            )
+                        ),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+            }
+            "Sleep" -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    var selectedTimeRange by remember { mutableStateOf("Daily") }
 
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
                             .padding(16.dp)
                     ) {
                         TimeRangeSelector(
@@ -385,145 +274,248 @@ fun DetailedStatsScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        if (stats.isNotEmpty()) {
-                            val totalTime = stats.values.sum()
-                            val categoryStats = stats.groupByCategory()
+                        // Uyku kalitesi grafiği
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp)
+                        ) {
+                            SleepQualityChart(
+                                sleepData = listOf(
+                                    "Mon" to 0.8f,
+                                    "Tue" to 0.6f,
+                                    "Wed" to 0.9f,
+                                    "Thu" to 0.7f,
+                                    "Fri" to 0.85f,
+                                    "Sat" to 0.95f,
+                                    "Sun" to 0.75f
+                                ),
+                                modifier = Modifier.fillMaxSize()
+                            )
                             
-                            Box(
+                            Column(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(300.dp)
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 16.dp),
+                                horizontalAlignment = Alignment.End
                             ) {
-                                AppUsageDonutChart(
-                                    appUsageData = categoryStats.toDonutChartData(),
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                                
-                                Column(
-                                    modifier = Modifier.align(Alignment.Center),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = viewModel.formatDuration(totalTime),
-                                        color = Color.White,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "Total ${selectedTimeRange.lowercase()} usage",
-                                        color = Color.White.copy(alpha = 0.7f),
-                                        fontSize = 14.sp
+                                sleepPhases.forEach { (phase, hours, color) ->
+                                    SleepPhaseIndicator(phase, hours, color)
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        // Metrik kartları için Grid yerine Row'lar kullanalım
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                sleepMetrics.take(2).forEach { metric ->
+                                    SleepMetricCard(
+                                        metric = metric,
+                                        modifier = Modifier.weight(1f)
                                     )
                                 }
                             }
                             
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             
-                            Text(
-                                text = "Most Used Apps",
-                                color = Color.White,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            
-                            // En çok kullanılan 5 uygulamayı listele
-                            stats.entries.take(5).forEach { (appName, duration) ->
-                                val formattedName = AppNameFormatter.formatAppName(appName)
-                                val category = AppNameFormatter.getCategoryForApp(appName)
-                                
-                                AppCategoryItem(
-                                    category = formattedName,
-                                    duration = viewModel.formatDuration(duration),
-                                    color = category.color,
-                                    percentage = (duration.toFloat() / totalTime)
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-
-                            if (selectedTimeRange != "Daily") {
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    text = "Average daily usage: ${viewModel.formatDuration(totalTime / when(selectedTimeRange) {
-                                        "Weekly" -> 7
-                                        "Monthly" -> 30
-                                        else -> 1
-                                    })}",
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        } else {
-                            // Veri yoksa mesaj göster
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
+                                sleepMetrics.takeLast(2).forEach { metric ->
+                                    SleepMetricCard(
+                                        metric = metric,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        SleepTrendsSection(selectedTimeRange)
+                    }
+                }
+            }
+            "Screen Time" -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    LaunchedEffect(Unit) {
+                        viewModel.checkUsagePermissionAndLoadStats()
+                    }
+
+                    if (!viewModel.hasUsagePermission.value) {
+                        PermissionRequest(
+                            message = "Uygulama kullanım istatistiklerini görüntülemek için lütfen izin verin",
+                            onRequestPermission = {
+                                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                                context.startActivity(intent)
+                            }
+                        )
+                    } else {
+                        var selectedTimeRange by remember { mutableStateOf("Daily") }
+                        val stats = when (selectedTimeRange) {
+                            "Daily" -> viewModel.dailyUsageStats.value
+                            "Weekly" -> viewModel.weeklyUsageStats.value
+                            "Monthly" -> viewModel.monthlyUsageStats.value
+                            else -> emptyMap()
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            TimeRangeSelector(
+                                selectedRange = selectedTimeRange,
+                                onRangeSelected = { selectedTimeRange = it }
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            if (stats.isNotEmpty()) {
+                                val totalTime = stats.values.sum()
+                                val categoryStats = stats.groupByCategory()
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                ) {
+                                    AppUsageDonutChart(
+                                        appUsageData = categoryStats.toDonutChartData(),
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+
+                                    Column(
+                                        modifier = Modifier.align(Alignment.Center),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = viewModel.formatDuration(totalTime),
+                                            color = Color.White,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "Total ${selectedTimeRange.lowercase()} usage",
+                                            color = Color.White.copy(alpha = 0.7f),
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
                                 Text(
-                                    text = "No app usage data available for $selectedTimeRange view",
+                                    text = "Most Used Apps",
                                     color = Color.White,
-                                    textAlign = TextAlign.Center
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 8.dp)
                                 )
+
+                                // En çok kullanılan 5 uygulamayı listele
+                                stats.entries.take(5).forEach { (appName, duration) ->
+                                    val formattedName = AppNameFormatter.formatAppName(appName)
+                                    val category = AppNameFormatter.getCategoryForApp(appName)
+
+                                    AppCategoryItem(
+                                        category = formattedName,
+                                        duration = viewModel.formatDuration(duration),
+                                        color = category.color,
+                                        percentage = (duration.toFloat() / totalTime)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+
+                                if (selectedTimeRange != "Daily") {
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Text(
+                                        text = "Average daily usage: ${viewModel.formatDuration(totalTime / when(selectedTimeRange) {
+                                            "Weekly" -> 7
+                                            "Monthly" -> 30
+                                            else -> 1
+                                        })}",
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            } else {
+                                // Veri yoksa mesaj göster
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No app usage data available for $selectedTimeRange view",
+                                        color = Color.White,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-        "Mood" -> {
-            var selectedTimeRange by remember { mutableStateOf("Daily") }
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                DetailAppBar(
-                    title = title,
-                    detail = "Today, $currentDateTime",
-                    onBackClick = { navController.popBackStack() }
-                )
-                TimeRangeSelector(selectedTimeRange) { selectedTimeRange = it }
+            "Mood" -> {
+                var selectedTimeRange by remember { mutableStateOf("Daily") }
                 
-                // Ruh hali grafiği ve etkileşimli noktalar
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
+                        .padding(16.dp)
                 ) {
-                    MoodLineGraph(
-                        moodData = listOf(
-                            "Mon" to 75,
-                            "Tue" to 60,
-                            "Wed" to 85,
-                            "Thu" to 70,
-                            "Fri" to 90,
-                            "Sat" to 95,
-                            "Sun" to 80
-                        ),
-                        modifier = Modifier.fillMaxSize()
+                    TimeRangeSelector(selectedTimeRange) { selectedTimeRange = it }
+                    
+                    // Ruh hali grafiği ve etkileşimli noktalar
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                    ) {
+                        MoodLineGraph(
+                            moodData = listOf(
+                                "Mon" to 75,
+                                "Tue" to 60,
+                                "Wed" to 85,
+                                "Thu" to 70,
+                                "Fri" to 90,
+                                "Sat" to 95,
+                                "Sun" to 80
+                            ),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    
+                    // Faktör analizi
+                    MoodFactorsAnalysis(
+                        factors = listOf(
+                            MoodFactor("Sleep", 0.8f, Icons.Default.Notifications),
+                            MoodFactor("Exercise", 0.6f, Icons.Default.LocationOn),
+                            MoodFactor("Social", 0.9f, Icons.Default.Person),
+                            MoodFactor("Work", 0.4f, Icons.Default.Call)
+                        )
                     )
-                }
-                
-                // Faktör analizi
-                MoodFactorsAnalysis(
-                    factors = listOf(
-                        MoodFactor("Sleep", 0.8f, Icons.Default.Notifications),
-                        MoodFactor("Exercise", 0.6f, Icons.Default.LocationOn),
-                        MoodFactor("Social", 0.9f, Icons.Default.Person),
-                        MoodFactor("Work", 0.4f, Icons.Default.Call)
-                    )
-                )
-                
-                // Günlük notlar ve aktiviteler
-                if (selectedTimeRange == "Daily") {
-                    MoodJournalSection(
-                        activities = listOf("Walking", "Reading", "Meeting"),
-                        notes = "Felt energetic after morning exercise"
-                    )
+                    
+                    // Günlük notlar ve aktiviteler
+                    if (selectedTimeRange == "Daily") {
+                        MoodJournalSection(
+                            activities = listOf("Walking", "Reading", "Meeting"),
+                            notes = "Felt energetic after morning exercise"
+                        )
+                    }
                 }
             }
         }

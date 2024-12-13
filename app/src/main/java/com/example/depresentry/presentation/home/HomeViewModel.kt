@@ -11,7 +11,7 @@ import com.example.depresentry.domain.usecase.profile.GetLocalProfileImageUseCas
 import com.example.depresentry.domain.usecase.profile.GetUserProfileUseCase
 import com.example.depresentry.domain.usecase.userData.local.GetLocalMessageByDateAndTypeAndRoleUseCase
 import com.example.depresentry.domain.usecase.usageStats.HasUsageStatsPermissionUseCase
-import com.example.depresentry.domain.usecase.usageStats.GetDailyStatsUseCase
+import com.example.depresentry.domain.usecase.usageStats.GetDailyUsageStatsUseCase
 import com.example.depresentry.domain.usecase.usageStats.FormatDurationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -26,7 +26,7 @@ class HomeViewModel @Inject constructor(
     private val calculateDepressionScoreUseCase: CalculateDepressionScoreUseCase,
     private val getLocalMessageByDateAndTypeAndRoleUseCase: GetLocalMessageByDateAndTypeAndRoleUseCase,
     private val hasUsageStatsPermissionUseCase: HasUsageStatsPermissionUseCase,
-    private val getDailyStatsUseCase: GetDailyStatsUseCase,
+    private val getDailyUsageStatsUseCase: GetDailyUsageStatsUseCase,
     private val formatDurationUseCase: FormatDurationUseCase
 ) : ViewModel() {
 
@@ -75,7 +75,7 @@ class HomeViewModel @Inject constructor(
     private fun loadScreenTimeStats() {
         viewModelScope.launch {
             try {
-                _screenTimeStats.value = getDailyStatsUseCase()
+                _screenTimeStats.value = getDailyUsageStatsUseCase()
             } catch (e: Exception) {
                 Log.e("screen time", "Error loading screen time stats homescreen", e)
             }
