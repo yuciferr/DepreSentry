@@ -1,7 +1,12 @@
 package com.example.depresentry.di
 
+import com.example.depresentry.domain.usecase.userData.local.UpdateActivityUseCase
 import UsageStatsRepositoryImpl
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorManager
+import com.example.depresentry.data.service.StepCounterService
+import com.example.depresentry.di.qualifiers.StepSensor
 import com.example.depresentry.data.local.dao.ChatMessageDao
 import com.example.depresentry.data.local.dao.ProfileImageDao
 import com.example.depresentry.data.local.dao.DailyDataDao
@@ -103,5 +108,34 @@ object RepositoryModule {
         usageStatsService: UsageStatsService
     ): UsageStatsRepository {
         return UsageStatsRepositoryImpl(usageStatsService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSensorManager(
+        @ApplicationContext context: Context
+    ): SensorManager {
+        return context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    }
+
+    @Provides
+    @Singleton
+    @StepSensor
+    fun provideStepSensor(
+        sensorManager: SensorManager
+    ): Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+
+    @Provides
+    @Singleton
+    fun provideStepCounterService(
+        @ApplicationContext context: Context,
+        sensorManager: SensorManager,
+        stepSensor: Sensor?,
+        getCurrentUserIdUseCase: GetCurrentUserIdUseCase,
+        updateActivityUseCase: UpdateActivityUseCase
+    ): StepCounterService {
+        return StepCounterService().apply {
+            this.sensorManager = sensorManager
+        }
     }
 }

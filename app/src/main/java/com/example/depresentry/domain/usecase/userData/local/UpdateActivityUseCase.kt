@@ -1,3 +1,5 @@
+package com.example.depresentry.domain.usecase.userData.local
+
 import com.example.depresentry.domain.repository.UserDataRepository
 import javax.inject.Inject
 
