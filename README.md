@@ -1,7 +1,11 @@
 # DepreSentry - Your AI-Powered Mental Health Guardian 🌟
 
 <div align="center">
-  <video src="DepreSentry.mp4" width="100%"/>
+  
+
+https://github.com/user-attachments/assets/c494f351-51db-4725-bc3a-ece227a80cd8
+
+
 </div>
 
 ## 🎯 Overview
