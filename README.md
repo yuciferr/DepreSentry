@@ -1,4 +1,4 @@
-# DepreSentry - Your AI-Powered Mental Health Companion 🌟
+# DepreSentry - Your AI-Powered Mental Health Guardian 🌟
 
 <div align="center">
   <video src="DepreSentry.mp4" width="100%"/>
